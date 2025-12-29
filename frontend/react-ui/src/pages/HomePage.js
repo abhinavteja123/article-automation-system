@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { articleService } from '../services/api';
 import ArticleCard from '../components/ArticleCard';
-import LoadingSpinner from '../components/LoadingSpinner';
-import ErrorMessage from '../components/ErrorMessage';
+import { Input } from '../components/ui/Input';
+import { Button } from '../components/ui/Button';
+import { Search, Plus, Loader2, FileText, Bot, Layers } from 'lucide-react';
+import { Skeleton } from '../components/ui/Skeleton';
+import { StatsCard } from '../components/ui/StatsCard';
+import { cn } from '../lib/utils';
 
 function HomePage() {
   const [articles, setArticles] = useState([]);
@@ -21,10 +26,8 @@ function HomePage() {
       setLoading(true);
       setError(null);
       const response = await articleService.getAllArticles();
-      console.log('Articles fetched:', response.data); // keeping this for debugging
       setArticles(response.data || []);
     } catch (err) {
-      console.error('Error fetching articles:', err); // debug
       setError(err.message || 'Failed to fetch articles');
     } finally {
       setLoading(false);
@@ -32,176 +35,204 @@ function HomePage() {
   };
 
   const filteredArticles = articles.filter(article => {
-    // filter by version
-    if (filter !== 'all' && article.version !== filter) {
-      return false;
-    }
-    
-    // filter by search term
+    if (filter !== 'all' && article.version !== filter) return false;
     if (searchTerm) {
       const search = searchTerm.toLowerCase();
       return (
         article.title?.toLowerCase().includes(search) ||
-        article.content?.toLowerCase().includes(search) ||
-        article.url?.toLowerCase().includes(search)
+        article.content?.toLowerCase().includes(search)
       );
     }
-    
     return true;
   });
 
-  // calculate stats
   const stats = {
     total: articles.length,
     original: articles.filter(a => a.version === 'original').length,
     updated: articles.filter(a => a.version === 'updated').length,
   };
 
-  if (loading) return <LoadingSpinner />;
-  if (error) return <ErrorMessage message={error} onRetry={fetchArticles} />;
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 }
+    }
+  };
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Articles</h1>
-              <p className="text-gray-600 mt-1">Browse and search through all articles</p>
-            </div>
-            <Link 
-              to="/automation"
-              className="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 shadow-md transition-all font-medium flex items-center gap-2"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              Run Automation
-            </Link>
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 }
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-8">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <Skeleton className="h-8 w-48 mb-2" />
+            <Skeleton className="h-4 w-64" />
           </div>
-
-          {/* Search */}
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-            <input
-              type="text"
-              placeholder="Search articles by title, content, or URL..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-10 w-32" />
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white rounded-lg shadow-md p-5 border-l-4 border-blue-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Total Articles</p>
-                <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
-              </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-md p-5 border-l-4 border-gray-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Original</p>
-                <p className="text-3xl font-bold text-gray-900">{stats.original}</p>
-              </div>
-              <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-md p-5 border-l-4 border-green-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">AI Enhanced</p>
-                <p className="text-3xl font-bold text-gray-900">{stats.updated}</p>
-              </div>
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-            </div>
-          </div>
+        <div className="grid gap-4 md:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-24 w-full rounded-xl" />
+          ))}
         </div>
 
-        {/* Filter Tabs */}
-        <div className="bg-white rounded-lg shadow-md p-1 mb-6 inline-flex">
-          <button
-            onClick={() => setFilter('all')}
-            className={`px-6 py-2 rounded-md font-medium transition-all ${
-              filter === 'all' 
-                ? 'bg-blue-600 text-white shadow' 
-                : 'text-gray-700 hover:bg-gray-100'
-            }`}
-          >
-            All ({stats.total})
-          </button>
-          <button
-            onClick={() => setFilter('original')}
-            className={`px-6 py-2 rounded-md font-medium transition-all ${
-              filter === 'original' 
-                ? 'bg-blue-600 text-white shadow' 
-                : 'text-gray-700 hover:bg-gray-100'
-            }`}
-          >
-            Original ({stats.original})
-          </button>
-          <button
-            onClick={() => setFilter('updated')}
-            className={`px-6 py-2 rounded-md font-medium transition-all ${
-              filter === 'updated' 
-                ? 'bg-blue-600 text-white shadow' 
-                : 'text-gray-700 hover:bg-gray-100'
-            }`}
-          >
-            Enhanced ({stats.updated})
-          </button>
-        </div>
-
-        {/* Articles Grid */}
-        {filteredArticles.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-lg shadow-md">
-            <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">No articles found</h3>
-            <p className="text-gray-500 mb-4">Try adjusting your search or run the scraper to add articles</p>
-            <Link 
-              to="/scraper" 
-              className="inline-block bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
-            >
-              Run Scraper
-            </Link>
-          </div>
-        ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredArticles.map(article => (
-              <ArticleCard key={article.id} article={article} />
+        <div className="border-b pb-1">
+          <div className="flex gap-6">
+            {[...Array(3)].map((_, i) => (
+              <Skeleton key={i} className="h-8 w-24" />
             ))}
           </div>
-        )}
+        </div>
+
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="h-64 rounded-xl border bg-card p-6 space-y-4">
+              <div className="flex justify-between">
+                <Skeleton className="h-5 w-24 rounded-full" />
+                <Skeleton className="h-4 w-20" />
+              </div>
+              <Skeleton className="h-6 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-2/3" />
+              <div className="pt-4 mt-auto">
+                <Skeleton className="h-8 w-full" />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-lg bg-destructive/10 p-6 text-center text-destructive">
+        <p className="font-semibold">{error}</p>
+        <Button onClick={fetchArticles} variant="outline" className="mt-4">Try Again</Button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* Header Section */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Articles</h1>
+          <p className="text-muted-foreground">Manage and track your content pipeline.</p>
+        </div>
+        <div className="flex gap-2">
+          <Link to="/scraper">
+            <Button variant="outline" className="gap-2">
+              <Plus className="h-4 w-4" /> Import Content
+            </Button>
+          </Link>
+          <Link to="/automation">
+            <Button className="gap-2">
+              <Bot className="h-4 w-4" /> Run Automation
+            </Button>
+          </Link>
+        </div>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid gap-4 md:grid-cols-3 mb-8">
+        <StatsCard
+          icon={FileText}
+          label="Total Articles"
+          value={stats.total}
+          trend="up"
+          trendValue="+12%"
+          color="text-blue-500"
+        />
+        <StatsCard
+          icon={Layers}
+          label="Original Content"
+          value={stats.original}
+          color="text-slate-500"
+        />
+        <StatsCard
+          icon={Bot}
+          label="AI Enhanced"
+          value={stats.updated}
+          trend="up"
+          trendValue="+5 new"
+          color="text-indigo-500"
+        />
+      </div>
+
+      {/* Filters and Search */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-4">
+        <div className="flex gap-6">
+          <FilterTab active={filter === 'all'} onClick={() => setFilter('all')}>All Articles</FilterTab>
+          <FilterTab active={filter === 'original'} onClick={() => setFilter('original')}>Original</FilterTab>
+          <FilterTab active={filter === 'updated'} onClick={() => setFilter('updated')}>Enhanced</FilterTab>
+        </div>
+
+        <div className="relative w-full md:w-72">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pl-9 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            placeholder="Search articles..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+      </div>
+
+      {/* Grid */}
+      {filteredArticles.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed py-16 text-center">
+          <div className="rounded-full bg-muted p-4 mb-4">
+            <Search className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-semibold">No articles found</h3>
+          <p className="text-muted-foreground max-w-sm mx-auto mb-6">
+            There are no articles matching your criteria. Try adjusting your filters or run the scraper.
+          </p>
+          <Link to="/scraper">
+            <Button>Go to Scraper</Button>
+          </Link>
+        </div>
+      ) : (
+        <motion.div
+          variants={container}
+          initial="hidden"
+          animate="show"
+          className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+        >
+          {filteredArticles.map((article) => (
+            <motion.div key={article.id} variants={item}>
+              <ArticleCard article={article} />
+            </motion.div>
+          ))}
+        </motion.div>
+      )}
     </div>
   );
 }
+
+
+
+const FilterTab = ({ active, children, onClick }) => (
+  <button
+    onClick={onClick}
+    className={cn(
+      "border-b-2 pb-3 text-sm font-medium transition-colors hover:text-primary",
+      active ? "border-primary text-primary" : "border-transparent text-muted-foreground"
+    )}
+  >
+    {children}
+  </button>
+)
 
 export default HomePage;

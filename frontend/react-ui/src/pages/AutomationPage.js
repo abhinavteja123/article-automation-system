@@ -1,12 +1,22 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { articleService } from '../services/api';
+import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Bot, Terminal, Play, Loader2, Sparkles, AlertTriangle } from 'lucide-react';
+import { Button } from '../components/ui/Button';
+import { Card, CardContent } from '../components/ui/Card';
+import { Badge } from '../components/ui/Badge';
+import { useToast } from '../components/ui/Toast';
 
 function AutomationPage() {
   const [running, setRunning] = useState(false);
   const [logs, setLogs] = useState([]);
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
+  const bottomRef = useRef(null);
+  const toast = useToast();
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [logs]);
 
   const addLog = (message) => {
     setLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] ${message}`]);
@@ -16,43 +26,36 @@ function AutomationPage() {
     setRunning(true);
     setLogs([]);
     setSuccess(false);
-    
+
     try {
-      addLog('🚀 Starting article enhancement automation...');
+      addLog('🚀 Starting AI enhancement...');
       addLog('📡 Connecting to automation server...');
-      
+
       const response = await fetch('http://localhost:3001/run-automation', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to connect to automation server');
-      }
+      if (!response.ok) throw new Error('Failed to connect to automation server');
 
       addLog('✅ Connected to automation server');
       addLog('⚙️ Processing articles...');
       addLog('');
 
-      // Read the stream
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
 
       while (true) {
         const { done, value } = await reader.read();
-        
         if (done) break;
 
         const chunk = decoder.decode(value);
         const lines = chunk.split('\n\n').filter(line => line.trim());
-        
+
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             try {
               const data = JSON.parse(line.substring(6));
-              
               if (data.type === 'log') {
                 addLog(data.message);
               } else if (data.type === 'error') {
@@ -61,19 +64,15 @@ function AutomationPage() {
                 addLog('');
                 if (data.success) {
                   addLog('🎉 ' + data.message);
-                  addLog('📊 All articles have been enhanced and saved!');
                   setSuccess(true);
-                  
-                  // Auto-redirect after 3 seconds
-                  setTimeout(() => {
-                    navigate('/articles');
-                  }, 3000);
+                  toast.success("Article enhancement completed!");
+                  setTimeout(() => navigate('/articles'), 3000);
                 } else {
                   addLog('⚠️ ' + data.message);
                 }
               }
             } catch (e) {
-              console.error('Failed to parse:', line);
+              console.error('Parse error', e);
             }
           }
         }
@@ -81,166 +80,111 @@ function AutomationPage() {
     } catch (error) {
       addLog('');
       addLog('❌ Failed to connect to automation server');
-      addLog('💡 Make sure the automation server is running:');
-      addLog('');
-      addLog('   1. Open a new terminal');
-      addLog('   2. cd scripts/article-automation');
-      addLog('   3. npm run server');
-      addLog('');
-      addLog('ℹ️ The server should start on http://localhost:3001');
-      addLog('ℹ️ Then try clicking "Run Automation" again');
-      console.error('Automation error:', error);
+      addLog('💡 Ensure the automation server is running on port 3001');
     } finally {
       setRunning(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12">
-      <div className="max-w-4xl mx-auto px-4">
-        <Link 
-          to="/articles" 
-          className="text-blue-600 hover:text-blue-800 mb-6 inline-flex items-center gap-2 font-medium"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          Back to Articles
-        </Link>
+    <div className="max-w-4xl mx-auto space-y-6 pb-12">
+      <Button variant="ghost" onClick={() => navigate('/articles')} className="pl-0 hover:pl-2 -ml-2">
+        <ArrowLeft className="h-4 w-4 mr-2" /> Back to Articles
+      </Button>
 
-        <div className="bg-white rounded-2xl shadow-xl p-8 mb-6">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-3 rounded-xl">
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">AI Article Enhancement</h1>
-              <p className="text-gray-600 mt-1">Powered by Google Gemini 2.5 Flash</p>
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 p-4 rounded-lg mb-6">
-            <h3 className="font-semibold text-gray-900 mb-2">What this does:</h3>
-            <ul className="space-y-2 text-sm text-gray-700">
-              <li className="flex items-start gap-2">
-                <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" />
-                </svg>
-                <span>Fetches all original articles from the database</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" />
-                </svg>
-                <span>Searches Google for top-ranking competitor articles on the same topic</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" />
-                </svg>
-                <span>Scrapes competitor content to understand what makes them rank well</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" />
-                </svg>
-                <span>Uses AI (Google Gemini) to rewrite articles with better formatting and insights</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <svg className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" />
-                </svg>
-                <span>Saves enhanced versions with references to competitor articles</span>
-              </li>
-            </ul>
-          </div>
-
-          <button
-            onClick={runAutomation}
-            disabled={running}
-            className={`w-full py-4 px-6 rounded-xl font-semibold text-lg shadow-lg transform transition-all ${
-              running 
-                ? 'bg-gray-400 cursor-not-allowed' 
-                : success
-                  ? 'bg-green-600 hover:bg-green-700 hover:scale-105 text-white'
-                  : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 hover:scale-105 text-white'
-            }`}
-          >
-            {running ? (
-              <span className="flex items-center justify-center gap-3">
-                <svg className="animate-spin h-6 w-6" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Running Automation... Please wait
-              </span>
-            ) : success ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" />
-                </svg>
-                Success! Redirecting to articles...
-              </span>
-            ) : (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                Start AI Enhancement
-              </span>
-            )}
-          </button>
+      <div className="flex items-center gap-4">
+        <div className="p-3 bg-indigo-500/10 rounded-xl text-indigo-600">
+          <Bot className="h-8 w-8" />
         </div>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">AI Enhancement</h1>
+          <p className="text-muted-foreground">Optimize articles using Gemini AI.</p>
+        </div>
+      </div>
 
-        {/* Logs Console */}
-        {logs.length > 0 && (
-          <div className="bg-gray-900 rounded-2xl shadow-xl p-6 font-mono text-sm">
-            <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-700">
-              <div className="flex gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+      <div className="grid md:grid-cols-3 gap-6">
+        <Card className="md:col-span-2 border-indigo-200/50 shadow-lg">
+          <CardContent className="p-6 space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Terminal className="h-5 w-5 text-muted-foreground" />
+                <h3 className="font-semibold">Automation Log</h3>
               </div>
-              <span className="text-gray-400 ml-2">Console Output</span>
+              {running && <Badge variant="outline" className="animate-pulse text-indigo-600 border-indigo-200 bg-indigo-50">Processing</Badge>}
             </div>
-            <div className="space-y-1 max-h-96 overflow-y-auto">
-              {logs.map((log, idx) => (
-                <div key={idx} className="text-green-400 hover:bg-gray-800 px-2 py-1 rounded">
-                  {log}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
-        {/* Manual Instructions */}
-        <div className="mt-6 bg-gray-50 rounded-xl p-6 border border-gray-200">
-          <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Run Manually (Optional)
-          </h3>
-          <div className="space-y-2">
-            <div className="bg-white p-3 rounded-lg border border-gray-200">
-              <p className="text-xs text-gray-600 mb-1">1. Scrape original articles:</p>
-              <code className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                cd scripts/article-automation && node scraper.js
-              </code>
+            <div className="bg-slate-950 rounded-lg p-4 h-[400px] overflow-y-auto font-mono text-xs md:text-sm text-slate-300 shadow-inner ring-1 ring-white/10">
+              {logs.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-slate-600 gap-2">
+                  <Sparkles className="h-8 w-8 opacity-50 text-indigo-400" />
+                  <p>AI processing logs will stream here...</p>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  {logs.map((log, i) => (
+                    <div key={i} className="break-all border-l-2 border-transparent pl-2 hover:border-indigo-500/50">
+                      {log}
+                    </div>
+                  ))}
+                  <div ref={bottomRef} />
+                </div>
+              )}
             </div>
-            <div className="bg-white p-3 rounded-lg border border-gray-200">
-              <p className="text-xs text-gray-600 mb-1">2. Enhance with AI:</p>
-              <code className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                cd scripts/article-automation && node automation.js
-              </code>
-            </div>
-          </div>
+
+            <Button
+              size="lg"
+              className="w-full text-base font-semibold shadow-md bg-indigo-600 hover:bg-indigo-700"
+              onClick={runAutomation}
+              disabled={running}
+            >
+              {running ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Enhancing...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="mr-2 h-5 w-5" /> Start Enhancement
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+
+        <div className="space-y-6">
+          <Card className="border-indigo-100">
+            <CardContent className="p-6">
+              <h3 className="font-semibold mb-4 text-indigo-900">AI Pipeline</h3>
+              <div className="space-y-4">
+                <Step number="1" title="Analyze" desc="Reads original content" />
+                <Step number="2" title="Research" desc="Finds competitor data" />
+                <Step number="3" title="Enhance" desc="Gemini rewrites content" />
+                <Step number="4" title="Verify" desc="Checks references" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-amber-50/50 border-amber-100">
+            <CardContent className="p-4 flex gap-3 text-amber-900 text-sm">
+              <AlertTriangle className="h-5 w-5 shrink-0" />
+              <p>Ensure the automation server is running on port 3001.</p>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
   );
 }
+
+const Step = ({ number, title, desc }) => (
+  <div className="flex gap-3">
+    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-600">
+      {number}
+    </div>
+    <div>
+      <p className="font-medium text-sm leading-none mb-1 text-indigo-900">{title}</p>
+      <p className="text-xs text-muted-foreground">{desc}</p>
+    </div>
+  </div>
+)
 
 export default AutomationPage;

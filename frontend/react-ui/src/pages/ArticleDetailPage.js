@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
 import { articleService } from '../services/api';
-import LoadingSpinner from '../components/LoadingSpinner';
-import ErrorMessage from '../components/ErrorMessage';
+import { Loader2, ArrowLeft, Calendar, ExternalLink, BookOpen, AlertCircle, Download } from 'lucide-react';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/Badge';
+import { Card, CardContent, CardHeader } from '../components/ui/Card';
+import { Skeleton } from '../components/ui/Skeleton';
+import { Breadcrumbs } from '../components/ui/Breadcrumbs';
+import { useReadingProgress } from '../hooks/useReadingProgress';
 
 function ArticleDetailPage() {
   const { id } = useParams();
@@ -10,6 +16,11 @@ function ArticleDetailPage() {
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const readingProgress = useReadingProgress();
+
+  useEffect(() => {
+    fetchArticle();
+  }, [id]);
 
   const fetchArticle = async () => {
     try {
@@ -24,221 +35,175 @@ function ArticleDetailPage() {
     }
   };
 
-  useEffect(() => {
-    fetchArticle();
-  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Format date
   const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
-  // Parse and render markdown-style content
-  const renderContent = (content) => {
-    if (!content) return null;
-
-    // Split content into sections
-    const lines = content.split('\n');
-    const elements = [];
-    let currentParagraph = [];
-
-    lines.forEach((line, index) => {
-      const trimmedLine = line.trim();
-
-      // Handle headings
-      if (trimmedLine.startsWith('## ')) {
-        if (currentParagraph.length > 0) {
-          elements.push(
-            <p key={`p-${index}`} className="mb-4 text-gray-700 leading-relaxed">
-              {currentParagraph.join(' ')}
-            </p>
-          );
-          currentParagraph = [];
-        }
-        elements.push(
-          <h2 key={`h2-${index}`} className="text-2xl font-bold mt-6 mb-4 text-gray-900">
-            {trimmedLine.replace('## ', '')}
-          </h2>
-        );
-      } else if (trimmedLine.startsWith('### ')) {
-        if (currentParagraph.length > 0) {
-          elements.push(
-            <p key={`p-${index}`} className="mb-4 text-gray-700 leading-relaxed">
-              {currentParagraph.join(' ')}
-            </p>
-          );
-          currentParagraph = [];
-        }
-        elements.push(
-          <h3 key={`h3-${index}`} className="text-xl font-semibold mt-5 mb-3 text-gray-800">
-            {trimmedLine.replace('### ', '')}
-          </h3>
-        );
-      } else if (trimmedLine.startsWith('- ')) {
-        if (currentParagraph.length > 0) {
-          elements.push(
-            <p key={`p-${index}`} className="mb-4 text-gray-700 leading-relaxed">
-              {currentParagraph.join(' ')}
-            </p>
-          );
-          currentParagraph = [];
-        }
-        elements.push(
-          <li key={`li-${index}`} className="mb-2 text-gray-700 ml-6">
-            {trimmedLine.replace('- ', '')}
-          </li>
-        );
-      } else if (trimmedLine === '') {
-        if (currentParagraph.length > 0) {
-          elements.push(
-            <p key={`p-${index}`} className="mb-4 text-gray-700 leading-relaxed">
-              {currentParagraph.join(' ')}
-            </p>
-          );
-          currentParagraph = [];
-        }
-      } else {
-        currentParagraph.push(trimmedLine);
-      }
-    });
-
-    if (currentParagraph.length > 0) {
-      elements.push(
-        <p key="p-final" className="mb-4 text-gray-700 leading-relaxed">
-          {currentParagraph.join(' ')}
-        </p>
-      );
-    }
-
-    return elements;
-  };
-
-  // Parse references
   const parseReferences = (references) => {
     if (!references) return [];
-    
     try {
-      if (typeof references === 'string') {
-        return JSON.parse(references);
-      }
-      return references;
+      return typeof references === 'string' ? JSON.parse(references) : references;
     } catch {
       return [];
     }
   };
 
-  if (loading) return <LoadingSpinner />;
-  if (error) return <ErrorMessage message={error} onRetry={fetchArticle} />;
-  if (!article) return <ErrorMessage message="Article not found" />;
+  const handleExport = (format) => {
+    if (!article) return;
+
+    let content = '';
+    let mimeType = 'text/plain';
+    let extension = 'txt';
+
+    if (format === 'markdown') {
+      content = `# ${article.title}\n\n${article.content}`;
+      mimeType = 'text/markdown';
+      extension = 'md';
+    } else {
+      content = `Title: ${article.title}\n\n${article.content}`;
+    }
+
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${article.title.replace(/\s+/g, '-').toLowerCase()}.${extension}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  if (loading) return (
+    <div className="max-w-4xl mx-auto space-y-6 pb-12">
+      <Skeleton className="h-10 w-32" />
+      <Card className="overflow-hidden border-none shadow-2xl">
+        <div className="p-8 md:p-12 border-b space-y-6">
+          <Skeleton className="h-6 w-32 rounded-full" />
+          <Skeleton className="h-12 w-3/4" />
+          <div className="flex gap-4">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+        </div>
+        <CardContent className="p-8 md:p-12 space-y-4">
+          {[...Array(6)].map((_, i) => (
+            <Skeleton key={i} className="h-4 w-full" />
+          ))}
+          <Skeleton className="h-4 w-2/3" />
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  if (error) return (
+    <div className="flex flex-col items-center justify-center p-8 space-y-4">
+      <AlertCircle className="h-12 w-12 text-destructive" />
+      <p className="text-lg font-medium">{error}</p>
+      <Button onClick={fetchArticle}>Retry</Button>
+    </div>
+  );
+
+  if (!article) return <div>Article not found</div>;
 
   const isUpdated = article.version === 'updated';
   const references = parseReferences(article.references);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Back Button */}
-      <button
-        onClick={() => navigate('/')}
-        className="mb-6 text-primary-600 hover:text-primary-800 font-medium flex items-center"
-      >
-        ← Back to Articles
-      </button>
+    <div className="max-w-4xl mx-auto space-y-6 pb-12">
+      <div
+        className="fixed top-0 left-0 h-1 bg-primary z-50 transition-all duration-300"
+        style={{ width: `${readingProgress}%` }}
+      />
+      <Breadcrumbs
+        items={[
+          { label: 'Articles', href: '/articles' },
+          { label: article.title }
+        ]}
+      />
 
-      {/* Article Header */}
-      <article className="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div className="p-8">
-          {/* Version Badge */}
-          <div className="mb-4">
-            <span
-              className={`inline-block px-4 py-2 rounded-full text-sm font-semibold ${
-                isUpdated
-                  ? 'bg-green-100 text-green-800'
-                  : 'bg-blue-100 text-blue-800'
-              }`}
-            >
-              {isUpdated ? '✓ AI Enhanced Version' : 'Original Version'}
-            </span>
+      <Card className="overflow-hidden border-none shadow-2xl">
+        {/* Hero Header */}
+        <div className="relative bg-gradient-to-br from-primary/5 to-secondary p-8 md:p-12 border-b">
+          <div className="absolute top-6 left-6">
+            <Badge variant={isUpdated ? "success" : "secondary"} className="scale-110">
+              {isUpdated ? 'AI Enhanced Version' : 'Original Version'}
+            </Badge>
           </div>
 
-          {/* Title */}
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            {article.title}
-          </h1>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mt-8">
+            <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-foreground leading-tight">
+              {article.title}
+            </h1>
+            <Button variant="outline" onClick={() => handleExport('markdown')} className="gap-2 shrink-0">
+              <Download className="h-4 w-4" /> Export MD
+            </Button>
+          </div>
 
-          {/* Metadata */}
-          <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-6 pb-6 border-b border-gray-200">
-            <div className="flex items-center">
-              <span className="font-medium">Published:</span>
-              <span className="ml-2">{formatDate(article.created_at)}</span>
+          <div className="mt-6 flex flex-wrap gap-6 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              {formatDate(article.created_at)}
             </div>
-            <div className="flex items-center">
-              <span className="font-medium">Source:</span>
+            {article.source_url && (
               <a
                 href={article.source_url}
                 target="_blank"
-                rel="noopener noreferrer"
-                className="ml-2 text-primary-600 hover:text-primary-800 underline"
+                rel="noreferrer"
+                className="flex items-center gap-2 hover:text-primary transition-colors"
               >
-                View Original
+                <ExternalLink className="h-4 w-4" />
+                View Original Source
               </a>
+            )}
+          </div>
+        </div>
+
+        {/* Navigation Alerts */}
+        {(isUpdated && article.original_article) && (
+          <div className="bg-blue-50/50 p-4 flex items-center justify-between border-b border-blue-100">
+            <div className="flex items-center gap-2 text-sm text-blue-800">
+              <BookOpen className="h-4 w-4" />
+              This is an AI-enhanced version.
             </div>
+            <Link to={`/article/${article.original_article.id}`}>
+              <Button variant="link" size="sm">View Original</Button>
+            </Link>
+          </div>
+        )}
+
+        {(article.version === 'original' && article.updated_versions?.length > 0) && (
+          <div className="bg-green-50/50 p-4 flex items-center justify-between border-b border-green-100">
+            <div className="flex items-center gap-2 text-sm text-green-800">
+              <BookOpen className="h-4 w-4" />
+              An AI-enhanced version is available!
+            </div>
+            <Link to={`/article/${article.updated_versions[0].id}`}>
+              <Button variant="link" size="sm" className="text-green-700">View Enhanced</Button>
+            </Link>
+          </div>
+        )}
+
+        <CardContent className="p-8 md:p-12">
+          <div className="prose prose-lg prose-slate dark:prose-invert max-w-none">
+            <ReactMarkdown>{article.content}</ReactMarkdown>
           </div>
 
-          {/* Version Navigation */}
-          {isUpdated && article.original_article && (
-            <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-sm text-blue-800 mb-2">
-                This is an AI-enhanced version. 
-              </p>
-              <Link
-                to={`/article/${article.original_article.id}`}
-                className="text-blue-600 hover:text-blue-800 font-medium text-sm"
-              >
-                → View Original Version
-              </Link>
-            </div>
-          )}
-
-          {article.version === 'original' && article.updated_versions?.length > 0 && (
-            <div className="mb-6 p-4 bg-green-50 rounded-lg border border-green-200">
-              <p className="text-sm text-green-800 mb-2">
-                An AI-enhanced version is available!
-              </p>
-              <Link
-                to={`/article/${article.updated_versions[0].id}`}
-                className="text-green-600 hover:text-green-800 font-medium text-sm"
-              >
-                → View AI Enhanced Version
-              </Link>
-            </div>
-          )}
-
-          {/* Article Content */}
-          <div className="article-content prose max-w-none">
-            {renderContent(article.content)}
-          </div>
-
-          {/* References Section */}
           {references.length > 0 && (
-            <div className="mt-8 pt-6 border-t border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                References
-              </h2>
-              <p className="text-gray-600 mb-4">
-                This article was enhanced using insights from:
-              </p>
-              <ul className="space-y-2">
-                {references.map((ref, index) => (
-                  <li key={index} className="flex items-start">
-                    <span className="text-primary-600 font-medium mr-2">
-                      {index + 1}.
-                    </span>
+            <div className="mt-12 rounded-xl bg-muted/30 p-6">
+              <h3 className="flex items-center gap-2 font-semibold text-lg mb-4">
+                <BookOpen className="h-5 w-5" /> References
+              </h3>
+              <ul className="space-y-3">
+                {references.map((ref, idx) => (
+                  <li key={idx} className="flex gap-3 text-sm">
+                    <span className="font-mono text-muted-foreground">{idx + 1}.</span>
                     <a
                       href={ref}
                       target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary-600 hover:text-primary-800 underline break-all"
+                      rel="noreferrer"
+                      className="text-primary hover:underline break-all"
                     >
                       {ref}
                     </a>
@@ -247,16 +212,13 @@ function ArticleDetailPage() {
               </ul>
             </div>
           )}
-        </div>
-      </article>
+        </CardContent>
+      </Card>
 
-      {/* Footer Navigation */}
-      <div className="mt-8 text-center">
-        <Link
-          to="/"
-          className="inline-block bg-primary-600 text-white px-6 py-3 rounded-md hover:bg-primary-700 transition-colors font-medium"
-        >
-          Browse More Articles
+      {/* Quick Nav Footer */}
+      <div className="flex justify-center pt-8">
+        <Link to="/articles">
+          <Button size="lg" variant="secondary">Browse More Articles</Button>
         </Link>
       </div>
     </div>
