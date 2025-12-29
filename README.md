@@ -127,6 +127,20 @@ OPENAI_MODEL=gpt-4o-mini
 - Scraper sometimes picks up wrong links
 - No rate limiting yet
 
+## Features
+
+✨ **Landing Page** - Welcome page with project overview and feature highlights
+
+🔍 **Search** - Search articles by title, content, or URL in real-time
+
+📊 **Compare View** - Side-by-side comparison of original vs AI-enhanced articles with statistics
+
+🤖 **Automation Control** - Trigger scraping and AI enhancement from the frontend with live logs
+
+📱 **Responsive Design** - Works on desktop, tablet, and mobile devices
+
+🎨 **Smooth Animations** - Fade-in effects and hover animations for better UX
+
 ## TODO
 
 - Add pagination
