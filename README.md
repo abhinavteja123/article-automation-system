@@ -295,7 +295,7 @@ Assignment/
 ## Known Issues
 
 - OpenAI API requires sufficient credits for automation script
-- Scraper may occasionally pick up sidebar links (mostly fixed)
+- Scraper may occasionally pick up sidebar links
 - Rate limiting not implemented yet
 
 ## Future Improvements
