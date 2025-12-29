@@ -274,20 +274,37 @@ Return ONLY the rewritten article content in markdown format. Do not include the
  */
 async function postUpdatedArticle(originalArticle, rewrittenContent, references) {
     try {
+        // Get the latest version number for this article
+        const existingVersionsResponse = await axios.get(
+            `${API_BASE_URL}/articles?original_article_id=${originalArticle.id}`,
+            { timeout: 10000 }
+        );
+        
+        let nextVersion = 1;
+        if (existingVersionsResponse.data.data && existingVersionsResponse.data.data.length > 0) {
+            const versions = existingVersionsResponse.data.data
+                .filter(a => a.original_article_id === originalArticle.id)
+                .map(a => a.version || 0);
+            nextVersion = Math.max(...versions, 0) + 1;
+        }
+        
         const referencesSection = `\n\n## References\n\nThis article was enhanced using insights from:\n${references.map((ref, i) => `${i + 1}. [${ref.title}](${ref.url})`).join('\n')}`;
         
         const fullContent = rewrittenContent + referencesSection;
         
         const payload = {
-            title: originalArticle.title + ' (Updated)',
+            title: `${originalArticle.title} (Enhanced v${nextVersion})`,
             content: fullContent,
             source_url: originalArticle.source_url,
-            version: 'updated',
+            version: nextVersion,
             original_article_id: originalArticle.id,
+            is_enhanced: true,
+            enhanced_by: 'Google Gemini 2.5 Flash',
+            enhanced_at: new Date().toISOString(),
             references: JSON.stringify(references.map(ref => ref.url))
         };
         
-        logger.info(`Posting updated article to API...`);
+        logger.info(`Posting enhanced article (version ${nextVersion}) to API...`);
         const response = await axios.post(`${API_BASE_URL}/articles`, payload, {
             headers: {
                 'Content-Type': 'application/json',
@@ -296,7 +313,7 @@ async function postUpdatedArticle(originalArticle, rewrittenContent, references)
             timeout: 30000
         });
         
-        logger.success(`Updated article saved (ID: ${response.data.data.id})`);
+        logger.success(`Enhanced article v${nextVersion} saved (ID: ${response.data.data.id})`);
         return response.data.data;
     } catch (error) {
         if (error.response) {

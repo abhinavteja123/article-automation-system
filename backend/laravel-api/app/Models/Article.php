@@ -22,6 +22,9 @@ class Article extends Model
         'version',
         'original_article_id',
         'references',
+        'is_enhanced',
+        'enhanced_by',
+        'enhanced_at',
     ];
 
     /**
@@ -31,8 +34,10 @@ class Article extends Model
      */
     protected $casts = [
         'references' => 'array',
+        'is_enhanced' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'enhanced_at' => 'datetime',
     ];
 
     /**
@@ -48,6 +53,14 @@ class Article extends Model
      */
     public function updatedVersions()
     {
-        return $this->hasMany(Article::class, 'original_article_id');
+        return $this->hasMany(Article::class, 'original_article_id')->orderBy('version', 'desc');
+    }
+
+    /**
+     * Get the latest enhanced version.
+     */
+    public function latestVersion()
+    {
+        return $this->hasOne(Article::class, 'original_article_id')->latest('version');
     }
 }

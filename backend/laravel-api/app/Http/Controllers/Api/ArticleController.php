@@ -10,10 +10,22 @@ use Illuminate\Validation\Rule;
 
 class ArticleController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         try {
-            $articles = Article::orderBy('created_at', 'desc')->get();
+            $query = Article::query();
+            
+            // Filter by original_article_id if provided
+            if ($request->has('original_article_id')) {
+                $query->where('original_article_id', $request->original_article_id);
+            }
+            
+            // Filter to show only original articles (not enhanced versions)
+            if ($request->has('original_only') && $request->original_only) {
+                $query->whereNull('original_article_id');
+            }
+            
+            $articles = $query->orderBy('created_at', 'desc')->get();
             
             return response()->json([
                 'success' => true,
@@ -36,9 +48,12 @@ class ArticleController extends Controller
                 'slug' => 'nullable|string|max:255|unique:articles,slug',
                 'content' => 'required|string',
                 'source_url' => 'required|url',
-                'version' => ['required', Rule::in(['original', 'updated'])],
+                'version' => 'nullable|integer',
                 'original_article_id' => 'nullable|exists:articles,id',
-                'references' => 'nullable|json'
+                'references' => 'nullable|json',
+                'is_enhanced' => 'nullable|boolean',
+                'enhanced_by' => 'nullable|string',
+                'enhanced_at' => 'nullable|date'
             ]);
 
             // auto generate slug if not provided
@@ -280,9 +295,10 @@ class ArticleController extends Controller
      * Get comparison between original and enhanced article.
      *
      * @param  int  $id
+     * @param  int  $version (optional - defaults to latest)
      * @return \Illuminate\Http\JsonResponse
      */
-    public function getComparison($id)
+    public function getComparison($id, Request $request)
     {
         try {
             $article = Article::find($id);
@@ -295,31 +311,51 @@ class ArticleController extends Controller
             }
 
             $comparison = [];
+            $allVersions = [];
 
-            if ($article->version === 'original') {
-                // If this is original, find its updated version
-                $enhanced = Article::where('original_article_id', $id)
-                    ->where('version', 'updated')
-                    ->latest()
-                    ->first();
+            // If this is an enhanced version, get its original
+            if ($article->is_enhanced && $article->original_article_id) {
+                $original = Article::find($article->original_article_id);
+                $comparison = [
+                    'original' => $original,
+                    'enhanced' => $article
+                ];
+                
+                // Get all versions of the original article
+                $allVersions = Article::where('original_article_id', $original->id)
+                    ->orderBy('version', 'desc')
+                    ->get(['id', 'title', 'version', 'enhanced_at', 'enhanced_by']);
+            } else {
+                // This is an original article
+                $requestedVersion = $request->query('version');
+                
+                if ($requestedVersion) {
+                    // Get specific version
+                    $enhanced = Article::where('original_article_id', $id)
+                        ->where('version', $requestedVersion)
+                        ->first();
+                } else {
+                    // Get latest version
+                    $enhanced = Article::where('original_article_id', $id)
+                        ->orderBy('version', 'desc')
+                        ->first();
+                }
 
                 $comparison = [
                     'original' => $article,
                     'enhanced' => $enhanced
                 ];
-            } else {
-                // If this is updated, find its original
-                $original = Article::find($article->original_article_id);
                 
-                $comparison = [
-                    'original' => $original,
-                    'enhanced' => $article
-                ];
+                // Get all versions
+                $allVersions = Article::where('original_article_id', $id)
+                    ->orderBy('version', 'desc')
+                    ->get(['id', 'title', 'version', 'enhanced_at', 'enhanced_by']);
             }
 
             return response()->json([
                 'success' => true,
-                'data' => $comparison
+                'data' => $comparison,
+                'versions' => $allVersions
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
@@ -328,5 +364,6 @@ class ArticleController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
     }
 }
