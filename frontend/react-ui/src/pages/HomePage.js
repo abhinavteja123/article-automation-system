@@ -19,9 +19,10 @@ function HomePage() {
       setLoading(true);
       setError(null);
       const response = await articleService.getAllArticles();
-      // console.log('Articles fetched:', response.data); // keeping this for debugging
+      console.log('Articles fetched:', response.data); // keeping this for debugging
       setArticles(response.data || []);
     } catch (err) {
+      console.error('Error fetching articles:', err); // debug
       setError(err.message || 'Failed to fetch articles');
     } finally {
       setLoading(false);

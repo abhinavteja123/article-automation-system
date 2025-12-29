@@ -13,6 +13,9 @@ const BLOG_URL = process.env.BLOG_URL || 'https://beyondchats.com/blogs/';
 const MAX_RETRIES = parseInt(process.env.MAX_RETRIES || '3');
 const RETRY_DELAY = parseInt(process.env.RETRY_DELAY || '2000');
 
+// TODO: make this configurable
+const TARGET_ARTICLE_COUNT = 5;
+
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function fetchWithRetry(url, options = {}, retries = MAX_RETRIES) {

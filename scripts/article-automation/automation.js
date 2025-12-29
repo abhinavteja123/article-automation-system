@@ -28,13 +28,16 @@ if (!OPENAI_API_KEY) {
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-// quick logger i made
+// quick logger i made for debugging
 const logger = {
     info: (msg) => console.log(`[INFO] ${new Date().toISOString()} - ${msg}`),
     error: (msg) => console.error(`[ERROR] ${new Date().toISOString()} - ${msg}`),
     success: (msg) => console.log(`[SUCCESS] ${new Date().toISOString()} - ${msg}`),
     warn: (msg) => console.warn(`[WARN] ${new Date().toISOString()} - ${msg}`)
 };
+
+// TODO: add better error logging
+// TODO: maybe save logs to file?
 
 async function fetchWithRetry(url, options = {}, retries = MAX_RETRIES) {
     for (let i = 0; i < retries; i++) {
