@@ -53,15 +53,27 @@ function ArticleCard({ article }) {
             </svg>
             <span>{article.content?.split(' ').length || 0} words</span>
           </div>
-          <Link 
-            to={`/article/${article.id}`} 
-            className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
-          >
-            Read more
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-            </svg>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link 
+              to={`/compare/${article.id}`} 
+              className="text-sm text-purple-600 hover:text-purple-700 font-medium flex items-center gap-1"
+              title="Compare versions"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+              </svg>
+              Compare
+            </Link>
+            <Link 
+              to={`/article/${article.id}`} 
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+            >
+              Read more
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+          </div>
         </div>
       </div>
     </div>

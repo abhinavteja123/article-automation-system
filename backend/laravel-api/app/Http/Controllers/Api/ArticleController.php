@@ -207,4 +207,126 @@ class ArticleController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Run the automation script to enhance articles.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function runAutomation()
+    {
+        try {
+            // Get absolute path to script
+            $scriptPath = realpath(base_path('../scripts/article-automation'));
+            
+            if (!$scriptPath || !file_exists($scriptPath)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Script directory not found',
+                    'path' => base_path('../scripts/article-automation')
+                ], 500);
+            }
+            
+            // Build command based on OS
+            if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+                // Windows: Use cmd.exe with /c flag
+                $scriptPath = str_replace('/', '\\', $scriptPath);
+                $command = "cmd /c \"cd /d \"$scriptPath\" && node automation.js 2>&1\"";
+            } else {
+                // Unix/Linux/Mac
+                $command = "cd \"$scriptPath\" && node automation.js 2>&1";
+            }
+            
+            // Set longer timeout for automation
+            set_time_limit(300); // 5 minutes
+            
+            // Execute command
+            $output = [];
+            $returnVar = 0;
+            exec($command, $output, $returnVar);
+            
+            $outputText = implode("\n", $output);
+            
+            // Return success if we got any output
+            if (!empty($outputText)) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Automation executed',
+                    'output' => $outputText,
+                    'return_code' => $returnVar
+                ], 200);
+            }
+            
+            // No output means something went wrong
+            return response()->json([
+                'success' => false,
+                'message' => 'Automation produced no output',
+                'command' => $command,
+                'return_code' => $returnVar,
+                'script_path' => $scriptPath
+            ], 500);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to run automation',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get comparison between original and enhanced article.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getComparison($id)
+    {
+        try {
+            $article = Article::find($id);
+
+            if (!$article) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Article not found'
+                ], 404);
+            }
+
+            $comparison = [];
+
+            if ($article->version === 'original') {
+                // If this is original, find its updated version
+                $enhanced = Article::where('original_article_id', $id)
+                    ->where('version', 'updated')
+                    ->latest()
+                    ->first();
+
+                $comparison = [
+                    'original' => $article,
+                    'enhanced' => $enhanced
+                ];
+            } else {
+                // If this is updated, find its original
+                $original = Article::find($article->original_article_id);
+                
+                $comparison = [
+                    'original' => $original,
+                    'enhanced' => $article
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $comparison
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch comparison',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

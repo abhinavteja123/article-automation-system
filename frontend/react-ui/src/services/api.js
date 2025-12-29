@@ -59,6 +59,26 @@ export const articleService = {
       throw error.response?.data || error.message;
     }
   },
+
+  // Run automation to enhance articles
+  runAutomation: async () => {
+    try {
+      const response = await api.post('/articles/run-automation');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Get comparison between original and enhanced article
+  getComparison: async (id) => {
+    try {
+      const response = await api.get(`/articles/${id}/comparison`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
 };
 
 export default api;

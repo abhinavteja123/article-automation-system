@@ -7,6 +7,7 @@
   "scripts": {
     "scrape": "node scraper.js",
     "automate": "node automation.js",
+    "server": "node server.js",
     "all": "node scraper.js && node automation.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -16,6 +17,8 @@
   "dependencies": {
     "axios": "^1.6.0",
     "cheerio": "^1.0.0-rc.12",
-    "dotenv": "^16.3.1"
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2"
   }
 }

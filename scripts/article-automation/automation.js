@@ -235,7 +235,7 @@ REQUIREMENTS:
 Return ONLY the rewritten article content in markdown format. Do not include the title or references section.`;
 
         const response = await axios.post(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
             {
                 contents: [{
                     parts: [{
@@ -321,26 +321,25 @@ async function processArticle(article) {
         const competitorArticles = await searchGoogle(article.title);
         
         if (competitorArticles.length === 0) {
-            logger.warn('No competitor articles found, skipping...');
-            return null;
+            logger.warn('No competitor articles found, will use only original content...');
+            // Continue anyway with empty competitor list
         }
         
         // Step 2: Scrape competitor articles
         const competitorContents = [];
         for (const competitor of competitorArticles) {
             const content = await scrapeCompetitorArticle(competitor.url);
-            if (content) {
+            if (content && content.length > 100) { // Only use if we got meaningful content
                 competitorContents.push(content);
             }
             await delay(2000); // Respectful delay
         }
         
-        if (competitorContents.length === 0) {
-            logger.warn('Failed to scrape competitor content, skipping...');
-            return null;
+        if (competitorContents.length === 0 && competitorArticles.length > 0) {
+            logger.warn('Failed to scrape competitor content, will enhance without competitor analysis...');
         }
         
-        // Step 3: Rewrite article using AI
+        // Step 3: Rewrite article using AI (even if no competitors found)
         const rewrittenContent = await rewriteArticleWithAI(article, competitorContents);
         
         // Step 4: Post updated article
@@ -355,6 +354,7 @@ async function processArticle(article) {
         
     } catch (error) {
         logger.error(`Failed to process article "${article.title}": ${error.message}`);
+        // Return null to indicate failure, but don't crash the whole process
         return null;
     }
 }
