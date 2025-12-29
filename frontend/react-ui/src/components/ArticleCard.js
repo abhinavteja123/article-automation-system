@@ -17,8 +17,8 @@ function ArticleCard({ article }) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 overflow-hidden">
-      <div className="p-6">
+    <div className="bg-white rounded-lg shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden hover-scale">
+      <div className="p-6 animate-fade-in">
         {/* Version Badge */}
         <div className="mb-3">
           <span

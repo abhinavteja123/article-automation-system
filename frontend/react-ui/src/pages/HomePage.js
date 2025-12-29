@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { articleService } from '../services/api';
 import ArticleCard from '../components/ArticleCard';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -9,6 +10,7 @@ function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     fetchArticles();
@@ -30,8 +32,22 @@ function HomePage() {
   };
 
   const filteredArticles = articles.filter(article => {
-    if (filter === 'all') return true;
-    return article.version === filter;
+    // filter by version
+    if (filter !== 'all' && article.version !== filter) {
+      return false;
+    }
+    
+    // filter by search term
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      return (
+        article.title?.toLowerCase().includes(search) ||
+        article.content?.toLowerCase().includes(search) ||
+        article.url?.toLowerCase().includes(search)
+      );
+    }
+    
+    return true;
   });
 
   // calculate stats
@@ -46,13 +62,32 @@ function HomePage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-3">
-          Article Library
-        </h1>
-        <p className="text-gray-600 text-lg">
-          Explore our collection of AI-enhanced articles
-        </p>
+      <div className="mb-8 flex justify-between items-center">
+        <div>
+          <h1 className="text-4xl font-bold text-gray-900 mb-3">
+            Article Library
+          </h1>
+          <p className="text-gray-600 text-lg">
+            Explore our collection of AI-enhanced articles
+          </p>
+        </div>
+        <Link 
+          to="/automation"
+          className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-all"
+        >
+          Run Automation
+        </Link>
+      </div>
+
+      {/* Search Bar */}
+      <div className="mb-6">
+        <input
+          type="text"
+          placeholder="Search articles by title, content, or URL..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
       </div>
 
       {/* Stats */}

@@ -19,8 +19,20 @@ function Navbar() {
             >
               Home
             </Link>
+            <Link
+              to="/articles"
+              className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+            >
+              Articles
+            </Link>
+            <Link
+              to="/automation"
+              className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+            >
+              Automation
+            </Link>
             <a
-              href="https://github.com"
+              href="https://github.com/abhinavteja123/article-automation-system"
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
