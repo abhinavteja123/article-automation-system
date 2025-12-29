@@ -27,6 +27,12 @@ function LandingPage() {
               View Articles →
             </Link>
             <Link 
+              to="/scraper" 
+              className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all font-medium"
+            >
+              Run Scraper
+            </Link>
+            <Link 
               to="/automation" 
               className="bg-white border-2 border-gray-300 px-8 py-3 rounded-lg hover:border-blue-600 hover:text-blue-600 transition-all font-medium"
             >

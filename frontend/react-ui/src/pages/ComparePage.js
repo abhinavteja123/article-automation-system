@@ -6,8 +6,6 @@ import ReactMarkdown from 'react-markdown';
 function ComparePage() {
   const { id } = useParams();
   const [comparison, setComparison] = useState(null);
-  const [versions, setVersions] = useState([]);
-  const [selectedVersion, setSelectedVersion] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [viewMode, setViewMode] = useState('side-by-side'); // 'side-by-side' or 'stacked'
@@ -16,28 +14,12 @@ function ComparePage() {
     fetchComparison();
   }, [id]);
 
-  useEffect(() => {
-    if (selectedVersion) {
-      fetchComparison(selectedVersion);
-    }
-  }, [selectedVersion]);
-
-  const fetchComparison = async (version = null) => {
+  const fetchComparison = async () => {
     try {
       setLoading(true);
       setError(null);
-      const url = version ? `${id}?version=${version}` : id;
-      const response = await articleService.getComparison(url);
+      const response = await articleService.getComparison(id);
       setComparison(response.data);
-      
-      // Set available versions if provided
-      if (response.versions && response.versions.length > 0) {
-        setVersions(response.versions);
-        // Set selected version to latest if not already set
-        if (!selectedVersion && response.versions[0]) {
-          setSelectedVersion(response.versions[0].version);
-        }
-      }
     } catch (err) {
       console.error('Error fetching comparison:', err);
       setError(err.message || 'Failed to load comparison');
@@ -113,54 +95,31 @@ function ComparePage() {
             Back to Articles
           </Link>
 
-          <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Article Comparison</h1>
               <p className="text-gray-600 mt-1">Compare original vs AI-enhanced version</p>
             </div>
             
-            <div className="flex gap-3 items-center">
-              {/* Version Selector */}
-              {versions.length > 0 && (
-                <div className="bg-white rounded-lg shadow-sm px-4 py-2">
-                  <label className="text-sm text-gray-600 mr-2">Version:</label>
-                  <select
-                    value={selectedVersion || ''}
-                    onChange={(e) => setSelectedVersion(parseInt(e.target.value))}
-                    className="border border-gray-300 rounded px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {versions.map((v) => (
-                      <option key={v.id} value={v.version}>
-                        v{v.version} - {new Date(v.enhanced_at).toLocaleDateString()}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="ml-2 text-xs text-gray-500">
-                    ({versions.length} version{versions.length > 1 ? 's' : ''})
-                  </span>
-                </div>
-              )}
-              
-              {/* View Mode Toggle */}
-              <div className="bg-white rounded-lg shadow-sm p-1 flex gap-1">
-                <button
-                  onClick={() => setViewMode('side-by-side')}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                    viewMode === 'side-by-side'
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  Side by Side
-                </button>
-                <button
-                  onClick={() => setViewMode('stacked')}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                    viewMode === 'stacked'
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
+            {/* View Mode Toggle */}
+            <div className="bg-white rounded-lg shadow-sm p-1 flex gap-1">
+              <button
+                onClick={() => setViewMode('side-by-side')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  viewMode === 'side-by-side'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                Side by Side
+              </button>
+              <button
+                onClick={() => setViewMode('stacked')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  viewMode === 'stacked'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
               >
                 Stacked
               </button>

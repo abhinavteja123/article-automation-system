@@ -186,8 +186,8 @@ function HomePage() {
             <h3 className="text-lg font-semibold text-gray-700 mb-2">No articles found</h3>
             <p className="text-gray-500 mb-4">Try adjusting your search or run the scraper to add articles</p>
             <Link 
-              to="/automation" 
-              className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+              to="/scraper" 
+              className="inline-block bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
             >
               Run Scraper
             </Link>

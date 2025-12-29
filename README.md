@@ -1,6 +1,6 @@
 # Article Automation System
 
-Full-stack app that scrapes articles from BeyondChats, uses AI to improve them with version tracking, and displays everything in a web interface.
+Full-stack app that scrapes articles from BeyondChats, uses AI to improve them, and displays everything in a web interface.
 
 ## How it works
 
@@ -8,19 +8,15 @@ Full-stack app that scrapes articles from BeyondChats, uses AI to improve them w
 - Node.js script scrapes last 5 articles from beyondchats.com/blogs
 - Stores them in MySQL via Laravel API
 
-**Phase 2 - AI Enhancement with Versioning:**
+**Phase 2 - AI Enhancement:**
 - Searches article title on Google using SerpAPI
 - Scrapes top 2 competitor articles
 - Uses Google Gemini to rewrite article based on competitors
-- Creates new enhanced versions (v1, v2, v3...) each time you run automation
-- Keeps all previous versions for comparison
-- Saves each version with references and metadata
+- Saves updated version with references
 
 **Phase 3 - Frontend:**
 - React app displays all articles
 - Shows both original and AI-enhanced versions
-- Compare view with version selector
-- View any previous enhancement iteration
 - Responsive design with Tailwind
 
 ## Architecture Diagram
@@ -138,28 +134,16 @@ GEMINI_API_KEY=your_key
 
 📊 **Compare View** - Side-by-side comparison of original vs AI-enhanced articles with statistics
 
-🔄 **Version Control** - Keep history of all enhancement iterations (v1, v2, v3...)
-   - Select any version to compare with original
-   - Track when each version was created
-   - See which AI model generated each version
-
 🤖 **Automation Control** - Trigger scraping and AI enhancement from the frontend with live logs
-   - Each run creates a new version instead of overwriting
-   - All previous versions remain accessible
 
 📱 **Responsive Design** - Works on desktop, tablet, and mobile devices
 
 🎨 **Smooth Animations** - Fade-in effects and hover animations for better UX
 
-## Documentation
-
-- [VERSIONING_GUIDE.md](./VERSIONING_GUIDE.md) - Detailed guide on article versioning system
-- [SERVER_README.md](./scripts/article-automation/SERVER_README.md) - Automation server documentation
-
 ## TODO
 
 - Add pagination
-- Version diff view (show exact changes between versions)
+- Implement search
 - Better error handling
 - Add tests
 

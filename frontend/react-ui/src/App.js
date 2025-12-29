@@ -6,6 +6,7 @@ import HomePage from './pages/HomePage';
 import ArticleDetailPage from './pages/ArticleDetailPage';
 import ComparePage from './pages/ComparePage';
 import AutomationPage from './pages/AutomationPage';
+import ScraperPage from './pages/ScraperPage';
 
 // TODO: maybe add a 404 page later?
 function App() {
@@ -18,6 +19,7 @@ function App() {
           <Route path="/articles" element={<HomePage />} />
           <Route path="/article/:id" element={<ArticleDetailPage />} />
           <Route path="/compare/:id" element={<ComparePage />} />
+          <Route path="/scraper" element={<ScraperPage />} />
           <Route path="/automation" element={<AutomationPage />} />
         </Routes>
       </div>

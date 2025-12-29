@@ -47,6 +47,16 @@ function Navbar() {
               Articles
             </Link>
             <Link
+              to="/scraper"
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isActive('/scraper') 
+                  ? 'bg-blue-50 text-blue-600' 
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              Scraper
+            </Link>
+            <Link
               to="/automation"
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 isActive('/automation') 
