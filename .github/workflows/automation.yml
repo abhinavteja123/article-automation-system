@@ -1,0 +1,57 @@
+name: Article Automation Workflow
+
+on:
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  
+  # Allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  scrape-and-enhance:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: scripts/article-automation/package-lock.json
+      
+      - name: Install dependencies
+        run: |
+          cd scripts/article-automation
+          npm ci
+      
+      - name: Run article scraper
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          MAX_RETRIES: 3
+          RETRY_DELAY: 2000
+        run: |
+          cd scripts/article-automation
+          npm run scrape
+        continue-on-error: true
+      
+      - name: Wait between operations
+        run: sleep 10
+      
+      - name: Run article enhancement
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
+        run: |
+          cd scripts/article-automation
+          npm run automate
+        continue-on-error: true
+      
+      - name: Notify on failure
+        if: failure()
+        run: echo "Automation workflow failed. Check logs for details."
