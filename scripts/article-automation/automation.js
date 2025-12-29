@@ -10,8 +10,7 @@ dotenv.config({ path: join(__dirname, '.env') });
 
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000/api';
 const SERPAPI_KEY = process.env.SERPAPI_KEY;
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4-turbo-preview';
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const MAX_RETRIES = parseInt(process.env.MAX_RETRIES || '3');
 const RETRY_DELAY = parseInt(process.env.RETRY_DELAY || '2000');
 
@@ -21,8 +20,8 @@ if (!SERPAPI_KEY) {
     process.exit(1);
 }
 
-if (!OPENAI_API_KEY) {
-    console.error('Error: OPENAI_API_KEY is required in .env file');
+if (!GEMINI_API_KEY) {
+    console.error('Error: GEMINI_API_KEY is required in .env file');
     process.exit(1);
 }
 
@@ -236,38 +235,33 @@ REQUIREMENTS:
 Return ONLY the rewritten article content in markdown format. Do not include the title or references section.`;
 
         const response = await axios.post(
-            'https://api.openai.com/v1/chat/completions',
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
             {
-                model: OPENAI_MODEL,
-                messages: [
-                    {
-                        role: 'system',
-                        content: 'You are an expert content writer specializing in creating high-quality, SEO-optimized articles.'
-                    },
-                    {
-                        role: 'user',
-                        content: prompt
-                    }
-                ],
-                temperature: 0.7,
-                max_tokens: 4000
+                contents: [{
+                    parts: [{
+                        text: prompt
+                    }]
+                }],
+                generationConfig: {
+                    temperature: 0.7,
+                    maxOutputTokens: 4000,
+                }
             },
             {
                 headers: {
-                    'Authorization': `Bearer ${OPENAI_API_KEY}`,
                     'Content-Type': 'application/json'
                 },
                 timeout: 120000
             }
         );
         
-        const rewrittenContent = response.data.choices[0].message.content.trim();
+        const rewrittenContent = response.data.candidates[0].content.parts[0].text.trim();
         logger.success(`Article rewritten successfully (${rewrittenContent.length} characters)`);
         
         return rewrittenContent;
     } catch (error) {
         if (error.response) {
-            logger.error(`OpenAI API Error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+            logger.error(`Gemini API Error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
         } else {
             logger.error(`Failed to rewrite article: ${error.message}`);
         }

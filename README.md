@@ -11,7 +11,7 @@ Full-stack app that scrapes articles from BeyondChats, uses AI to improve them, 
 **Phase 2 - AI Enhancement:**
 - Searches article title on Google using SerpAPI
 - Scrapes top 2 competitor articles
-- Uses OpenAI to rewrite article based on competitors
+- Uses Google Gemini to rewrite article based on competitors
 - Saves updated version with references
 
 **Phase 3 - Frontend:**
@@ -58,7 +58,7 @@ BeyondChats Blog
 
 **Automation:**
 - Node.js
-- OpenAI GPT-4
+- Google Gemini AI
 - SerpAPI
 - Cheerio
 
@@ -117,13 +117,12 @@ DB_PASSWORD=
 ```
 API_BASE_URL=http://localhost:8000/api
 SERPAPI_KEY=your_key
-OPENAI_API_KEY=your_key
-OPENAI_MODEL=gpt-4o-mini
+GEMINI_API_KEY=your_key
 ```
 
 ## Known Issues
 
-- OpenAI API needs credits
+- Gemini API needs API key (free tier available)
 - Scraper sometimes picks up wrong links
 - No rate limiting yet
 
