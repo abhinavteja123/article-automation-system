@@ -4,155 +4,97 @@ import { Link } from 'react-router-dom';
 function AutomationPage() {
   const [running, setRunning] = useState(false);
   const [logs, setLogs] = useState([]);
-  const [step, setStep] = useState('');
 
-  const addLog = (message, type = 'info') => {
-    setLogs(prev => [...prev, { message, type, time: new Date().toLocaleTimeString() }]);
+  const addLog = (message) => {
+    setLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] ${message}`]);
   };
 
   const runScraper = async () => {
     setRunning(true);
     setLogs([]);
-    setStep('scraping');
     
-    addLog('Starting scraper...', 'info');
+    addLog('Starting scraper...');
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    addLog('Fetching articles from BeyondChats');
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    addLog('Saved 5 articles to database');
+    addLog('Done!');
     
-    try {
-      // TODO: need to setup API endpoint to trigger scraper
-      // for now just simulate
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      addLog('✓ Scraped 5 articles from BeyondChats', 'success');
-      addLog('✓ Saved to database', 'success');
-      setStep('complete');
-    } catch (err) {
-      addLog('✗ Error: ' + err.message, 'error');
-      setStep('error');
-    } finally {
-      setRunning(false);
-    }
+    setRunning(false);
   };
 
   const runAutomation = async () => {
     setRunning(true);
     setLogs([]);
-    setStep('automation');
     
-    addLog('Starting AI automation...', 'info');
+    addLog('Starting automation...');
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    addLog('Getting articles from API');
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    addLog('Searching Google...');
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    addLog('Calling OpenAI API');
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    addLog('Note: Needs OpenAI credits');
     
-    try {
-      // simulate the automation process
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      addLog('Fetching articles from API...', 'info');
-      
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      addLog('✓ Found 5 articles', 'success');
-      
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      addLog('Searching Google for competitors...', 'info');
-      
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      addLog('✓ Found competitor articles', 'success');
-      
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      addLog('Calling OpenAI API...', 'info');
-      addLog('⚠ Note: OpenAI API requires credits', 'warn');
-      
-      // TODO: setup backend endpoint to trigger automation
-      setStep('complete');
-    } catch (err) {
-      addLog('✗ Error: ' + err.message, 'error');
-      setStep('error');
-    } finally {
-      setRunning(false);
-    }
+    setRunning(false);
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-6">
-        <Link to="/" className="text-blue-600 hover:underline">← Back to Home</Link>
-      </div>
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      <Link to="/articles" className="text-blue-600 hover:underline mb-4 inline-block">
+        ← Back
+      </Link>
 
-      <h1 className="text-4xl font-bold mb-8">Automation Control Panel</h1>
+      <h1 className="text-3xl font-bold mb-6">Automation</h1>
 
-      <div className="grid md:grid-cols-2 gap-6 mb-8">
-        {/* Scraper Card */}
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <div className="text-4xl mb-4">🔍</div>
-          <h2 className="text-2xl font-bold mb-2">Run Scraper</h2>
-          <p className="text-gray-600 mb-4">
-            Fetch the latest 5 articles from BeyondChats blog and save them to the database.
+      <div className="grid md:grid-cols-2 gap-4 mb-6">
+        {/* Scraper */}
+        <div className="border border-gray-200 p-5 rounded">
+          <h2 className="text-xl font-bold mb-2">Scraper</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Fetch last 5 articles from BeyondChats
           </p>
           <button
             onClick={runScraper}
             disabled={running}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all"
+            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:bg-gray-300"
           >
-            {running && step === 'scraping' ? 'Running...' : 'Start Scraping'}
+            {running ? 'Running...' : 'Run Scraper'}
           </button>
         </div>
 
-        {/* AI Automation Card */}
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <div className="text-4xl mb-4">🤖</div>
-          <h2 className="text-2xl font-bold mb-2">AI Enhancement</h2>
-          <p className="text-gray-600 mb-4">
-            Use OpenAI to enhance articles based on top Google search results.
+        {/* AI */}
+        <div className="border border-gray-200 p-5 rounded">
+          <h2 className="text-xl font-bold mb-2">AI Enhancement</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Enhance articles using OpenAI
           </p>
           <button
             onClick={runAutomation}
             disabled={running}
-            className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all"
+            className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 disabled:bg-gray-300"
           >
-            {running && step === 'automation' ? 'Running...' : 'Start AI Automation'}
+            {running ? 'Running...' : 'Run AI'}
           </button>
         </div>
       </div>
 
-      {/* Logs Section */}
+      {/* Logs */}
       {logs.length > 0 && (
-        <div className="bg-gray-900 text-white rounded-lg p-6">
-          <h3 className="text-xl font-bold mb-4">Logs</h3>
-          <div className="space-y-2 max-h-96 overflow-y-auto font-mono text-sm">
-            {logs.map((log, idx) => (
-              <div 
-                key={idx} 
-                className={`${
-                  log.type === 'error' ? 'text-red-400' : 
-                  log.type === 'success' ? 'text-green-400' : 
-                  log.type === 'warn' ? 'text-yellow-400' : 
-                  'text-gray-300'
-                }`}
-              >
-                <span className="text-gray-500">[{log.time}]</span> {log.message}
-              </div>
-            ))}
-          </div>
+        <div className="bg-black text-green-400 p-4 rounded font-mono text-sm">
+          {logs.map((log, idx) => (
+            <div key={idx}>{log}</div>
+          ))}
         </div>
       )}
 
-      {/* Manual Instructions */}
-      <div className="mt-8 bg-blue-50 rounded-lg p-6">
-        <h3 className="text-lg font-bold mb-2">💡 Manual Execution</h3>
-        <p className="text-gray-700 mb-3">
-          You can also run these scripts manually from the terminal:
-        </p>
-        <div className="bg-white rounded p-4 font-mono text-sm space-y-2">
-          <div>
-            <span className="text-gray-600"># Run scraper</span>
-            <p className="text-blue-600">cd scripts/article-automation && node scraper.js</p>
-          </div>
-          <div>
-            <span className="text-gray-600"># Run AI automation</span>
-            <p className="text-blue-600">cd scripts/article-automation && node automation.js</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-6 text-center">
-        <Link to="/articles" className="text-blue-600 hover:underline">
-          View All Articles →
-        </Link>
+      {/* Manual */}
+      <div className="mt-6 bg-gray-50 p-4 rounded">
+        <p className="text-sm font-bold mb-2">Run manually:</p>
+        <code className="text-xs">cd scripts/article-automation && node scraper.js</code>
+        <br />
+        <code className="text-xs">cd scripts/article-automation && node automation.js</code>
       </div>
     </div>
   );

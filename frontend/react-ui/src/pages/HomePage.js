@@ -61,104 +61,78 @@ function HomePage() {
   if (error) return <ErrorMessage message={error} onRetry={fetchArticles} />;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8 flex justify-between items-center">
-        <div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-3">
-            Article Library
-          </h1>
-          <p className="text-gray-600 text-lg">
-            Explore our collection of AI-enhanced articles
-          </p>
-        </div>
+    <div className="max-w-6xl mx-auto px-4 py-8">
+      {/* Header */}
+      <div className="mb-6 flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Articles</h1>
         <Link 
           to="/automation"
-          className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-all"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
           Run Automation
         </Link>
       </div>
 
-      {/* Search Bar */}
-      <div className="mb-6">
-        <input
-          type="text"
-          placeholder="Search articles by title, content, or URL..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
+      {/* Search */}
+      <input
+        type="text"
+        placeholder="Search articles..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="w-full px-4 py-2 border border-gray-300 rounded mb-6 focus:outline-none focus:border-blue-500"
+      />
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-3xl font-bold text-primary-600 mb-1">
-            {stats.total}
-          </div>
-          <div className="text-gray-600 text-sm font-medium">Total Articles</div>
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="bg-white border border-gray-200 p-4 rounded">
+          <div className="text-2xl font-bold">{stats.total}</div>
+          <div className="text-sm text-gray-600">Total</div>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-3xl font-bold text-blue-600 mb-1">
-            {stats.original}
-          </div>
-          <div className="text-gray-600 text-sm font-medium">Original Articles</div>
+        <div className="bg-white border border-gray-200 p-4 rounded">
+          <div className="text-2xl font-bold">{stats.original}</div>
+          <div className="text-sm text-gray-600">Original</div>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-3xl font-bold text-green-600 mb-1">
-            {stats.updated}
-          </div>
-          <div className="text-gray-600 text-sm font-medium">AI Enhanced</div>
+        <div className="bg-white border border-gray-200 p-4 rounded">
+          <div className="text-2xl font-bold">{stats.updated}</div>
+          <div className="text-sm text-gray-600">Enhanced</div>
         </div>
       </div>
 
-      {/* Filter Buttons */}
-      <div className="mb-6 flex flex-wrap gap-3">
+      {/* Filters */}
+      <div className="mb-6 flex gap-2">
         <button
           onClick={() => setFilter('all')}
-          className={`px-4 py-2 rounded-md font-medium transition-colors ${
-            filter === 'all'
-              ? 'bg-primary-600 text-white'
-              : 'bg-white text-gray-700 hover:bg-gray-100'
+          className={`px-4 py-2 rounded ${
+            filter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100'
           }`}
         >
-          All Articles ({stats.total})
+          All
         </button>
         <button
           onClick={() => setFilter('original')}
-          className={`px-4 py-2 rounded-md font-medium transition-colors ${
-            filter === 'original'
-              ? 'bg-blue-600 text-white'
-              : 'bg-white text-gray-700 hover:bg-gray-100'
+          className={`px-4 py-2 rounded ${
+            filter === 'original' ? 'bg-blue-600 text-white' : 'bg-gray-100'
           }`}
         >
-          Original ({stats.original})
+          Original
         </button>
         <button
           onClick={() => setFilter('updated')}
-          className={`px-4 py-2 rounded-md font-medium transition-colors ${
-            filter === 'updated'
-              ? 'bg-green-600 text-white'
-              : 'bg-white text-gray-700 hover:bg-gray-100'
+          className={`px-4 py-2 rounded ${
+            filter === 'updated' ? 'bg-blue-600 text-white' : 'bg-gray-100'
           }`}
         >
-          AI Enhanced ({stats.updated})
+          Enhanced
         </button>
       </div>
 
-      {/* Articles Grid */}
+      {/* Articles */}
       {filteredArticles.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="text-6xl mb-4">📝</div>
-          <h3 className="text-xl font-semibold text-gray-700 mb-2">
-            No articles found
-          </h3>
-          <p className="text-gray-500">
-            Try running the scraper to populate the database.
-          </p>
+        <div className="text-center py-12 text-gray-500">
+          <p>No articles found.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredArticles.map(article => (
             <ArticleCard key={article.id} article={article} />
           ))}
