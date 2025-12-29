@@ -19,6 +19,31 @@ Full-stack app that scrapes articles from BeyondChats, uses AI to improve them, 
 - Shows both original and AI-enhanced versions
 - Responsive design with Tailwind
 
+## Architecture Diagram
+
+```
+BeyondChats Blog
+      |
+      v
+[Scraper.js] -----> [Laravel API] -----> [MySQL Database]
+                         ^                      |
+                         |                      |
+                         |                      v
+                    [automation.js] <----- fetch articles
+                         |
+                         v
+                  [SerpAPI/Google] ---> scrape competitors
+                         |
+                         v
+                    [OpenAI API] ---> generate new article
+                         |
+                         v
+                  [Laravel API] ---> save updated article
+                         |
+                         v
+                  [React Frontend] ---> display to users
+```
+
 ## Tech Stack
 
 **Backend:**
