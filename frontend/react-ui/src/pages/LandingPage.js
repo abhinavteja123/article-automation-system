@@ -29,8 +29,6 @@ function LandingPage() {
           </div>
         </div>
 
-        </div>
-
         {/* Simple feature list */}
         <div className="grid md:grid-cols-3 gap-6 mb-16">
           <div className="border border-gray-200 p-5 rounded">
