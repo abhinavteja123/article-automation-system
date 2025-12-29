@@ -2,10 +2,13 @@ import React from 'react';
 
 function LoadingSpinner() {
   return (
-    <div className="flex justify-center items-center min-h-[400px]">
-      <div className="relative">
-        <div className="w-16 h-16 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div>
-        <p className="text-gray-600 mt-4 text-center">Loading...</p>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-center">
+        <div className="relative w-16 h-16 mx-auto mb-4">
+          <div className="absolute top-0 left-0 w-full h-full border-4 border-blue-200 rounded-full"></div>
+          <div className="absolute top-0 left-0 w-full h-full border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
+        </div>
+        <p className="text-gray-600 font-medium">Loading articles...</p>
       </div>
     </div>
   );
