@@ -1,0 +1,48 @@
+# Node modules
+node_modules/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Laravel
+/backend/laravel-api/vendor/
+/backend/laravel-api/node_modules/
+/backend/laravel-api/public/hot
+/backend/laravel-api/public/storage
+/backend/laravel-api/storage/*.key
+/backend/laravel-api/.env
+/backend/laravel-api/.env.backup
+/backend/laravel-api/.phpunit.result.cache
+/backend/laravel-api/Homestead.json
+/backend/laravel-api/Homestead.yaml
+
+# React
+/frontend/react-ui/node_modules/
+/frontend/react-ui/build/
+/frontend/react-ui/.env.local
+/frontend/react-ui/.env.development.local
+/frontend/react-ui/.env.test.local
+/frontend/react-ui/.env.production.local
+
+# Scripts
+/scripts/article-automation/node_modules/
+/scripts/article-automation/.env
