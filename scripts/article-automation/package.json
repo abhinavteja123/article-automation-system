@@ -1,0 +1,21 @@
+{
+  "name": "article-scraper",
+  "version": "1.0.0",
+  "description": "Scrapes articles from BeyondChats blog",
+  "main": "scraper.js",
+  "type": "module",
+  "scripts": {
+    "scrape": "node scraper.js",
+    "automate": "node automation.js",
+    "all": "node scraper.js && node automation.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["scraper", "automation"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "cheerio": "^1.0.0-rc.12",
+    "dotenv": "^16.3.1"
+  }
+}
