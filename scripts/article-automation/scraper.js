@@ -87,65 +87,57 @@ async function getArticleLinksFromPage(pageNum) {
     try {
         const pageUrl = pageNum === 1 ? BLOG_URL : `${BLOG_URL}page/${pageNum}/`;
         console.log(`Fetching articles from: ${pageUrl}`);
-        
+
         const response = await fetchWithRetry(pageUrl);
         const $ = cheerio.load(response.data);
-        
+
         const articles = [];
-        
-        // Extract only main content articles, NOT featured/sidebar links
-        // Look for article titles in the main content area
-        $('article, .post, .blog-post, main').find('h1, h2, h3').each((i, elem) => {
-            const $heading = $(elem);
-            const $link = $heading.find('a').length > 0 ? $heading.find('a') : $heading.parent('a').length > 0 ? $heading.parent('a') : $heading.next('a');
-            
-            if ($link.length === 0) return;
-            
-            const link = $link.attr('href');
-            const title = $heading.text().trim() || $link.text().trim();
-            
-            // Filter: Must have href, title, contain /blogs/, but NOT /tag/ or /page/
-            if (link && title && 
-                link.includes('/blogs/') && 
-                !link.includes('/tag/') && 
-                !link.includes('/page/') &&
-                title.length > 15 &&
-                !articles.some(a => a.url === link)) {
-                
-                const fullUrl = link.startsWith('http') ? link : `https://beyondchats.com${link}`;
-                console.log(`  Found article: ${title} - ${fullUrl}`);
-                articles.push({
-                    title: title,
-                    url: fullUrl
-                });
-            }
-        });
-        
-        // Fallback: if no articles found with above method, try direct article links
-        if (articles.length === 0) {
-            $('article a, .post-title a, h2.entry-title a, h1 a').each((i, elem) => {
-                const link = $(elem).attr('href');
-                const title = $(elem).text().trim();
-                
-                if (link && title && 
-                    link.includes('/blogs/') && 
-                    !link.includes('/tag/') && 
-                    !link.includes('/page/') &&
-                    title.length > 15 &&
-                    !articles.some(a => a.url === link)) {
-                    
-                    const fullUrl = link.startsWith('http') ? link : `https://beyondchats.com${link}`;
-                    console.log(`  Found article: ${title} - ${fullUrl}`);
+
+        // More specific selectors for BeyondChats blog listing
+        const articleSelectors = [
+            'article h2 a',
+            'article .post-title a',
+            '.blog-post h2 a',
+            '.post-item h2 a',
+            'h2.entry-title a',
+            '.article-title a',
+            'article a[href*="/blogs/"]'
+        ];
+
+        for (const selector of articleSelectors) {
+            $(selector).each((i, elem) => {
+                const $link = $(elem);
+                const href = $link.attr('href');
+                const title = $link.text().trim();
+
+                if (href && title &&
+                    href.includes('/blogs/') &&
+                    !href.includes('/tag/') &&
+                    !href.includes('/page/') &&
+                    !href.includes('/category/') &&
+                    title.length > 10 && // More substantial titles
+                    !articles.some(a => a.url === href)) {
+
+                    const fullUrl = href.startsWith('http') ? href : `https://beyondchats.com${href}`;
+                    console.log(`  Found article: ${title.substring(0, 50)}...`);
                     articles.push({
                         title: title,
                         url: fullUrl
                     });
                 }
             });
+
+            // If we found articles with this selector, break to avoid duplicates
+            if (articles.length > 0) break;
         }
-        
-        console.log(`Found ${articles.length} valid blog articles on page ${pageNum}`);
-        return articles;
+
+        // Remove duplicates based on URL
+        const uniqueArticles = articles.filter((article, index, self) =>
+            index === self.findIndex(a => a.url === article.url)
+        );
+
+        console.log(`Found ${uniqueArticles.length} unique blog articles on page ${pageNum}`);
+        return uniqueArticles;
     } catch (error) {
         console.error(`Error fetching articles from page ${pageNum}:`, error.message);
         return [];
@@ -160,41 +152,68 @@ async function scrapeArticleContent(url) {
         console.log(`Scraping article: ${url}`);
         const response = await fetchWithRetry(url);
         const $ = cheerio.load(response.data);
-        
-        // Remove unwanted elements
-        $('script, style, nav, header, footer, aside, .sidebar, .advertisement').remove();
-        
-        // Try to find article content with various selectors
+
+        // Remove unwanted elements that might contain other article content
+        $('script, style, nav, header, footer, aside, .sidebar, .advertisement, .ad, .social-share, .comments, .related-posts, iframe, form, .newsletter, .author-bio, .tags, .categories').remove();
+
+        // Also remove elements that might contain multiple article previews
+        $('.post-preview, .article-preview, .blog-preview, .recent-posts, .popular-posts, .featured-posts').remove();
+
+        // Try to find article content with more specific selectors for BeyondChats
         let content = '';
         const contentSelectors = [
-            'article .content',
-            'article .post-content',
-            'article .entry-content',
             '.article-content',
-            '.post-body',
-            'article',
-            'main article'
+            '.post-content',
+            '.entry-content',
+            '.content-area',
+            'article .content',
+            'article p', // Get all paragraphs within article
+            '.single-post-content',
+            '.blog-content',
+            'main .content',
+            '.post-body'
         ];
-        
+
         for (const selector of contentSelectors) {
             const element = $(selector);
             if (element.length) {
-                content = element.text().trim();
-                if (content.length > 200) break;
+                // Get text from paragraphs only, not from headings or other elements
+                const paragraphs = element.find('p').length ?
+                    element.find('p').map((i, el) => $(el).text().trim()).get().join('\n\n') :
+                    element.text().trim();
+
+                if (paragraphs.length > 500) { // Require substantial content
+                    content = paragraphs;
+                    console.log(`  Found content with selector: ${selector} (${content.length} chars)`);
+                    break;
+                }
             }
         }
-        
-        // If no content found, try getting text from main content area
-        if (!content || content.length < 200) {
-            content = $('main').text().trim() || $('body').text().trim();
+
+        // If still no good content, try getting all paragraphs from the main content area
+        if (!content || content.length < 500) {
+            const mainContent = $('main, .main-content, .content').first();
+            if (mainContent.length) {
+                const paragraphs = mainContent.find('p').map((i, el) => $(el).text().trim()).get();
+                // Filter out very short paragraphs (likely navigation or metadata)
+                const filteredParagraphs = paragraphs.filter(p => p.length > 50);
+                content = filteredParagraphs.join('\n\n');
+                console.log(`  Fallback: extracted ${filteredParagraphs.length} paragraphs (${content.length} chars)`);
+            }
         }
-        
-        // Clean up content
+
+        // Final cleanup
         content = content
-            .replace(/\s+/g, ' ')
-            .replace(/\n+/g, '\n')
+            .replace(/\s+/g, ' ')  // Replace multiple spaces with single space
+            .replace(/\n\s*\n/g, '\n\n')  // Clean up line breaks
             .trim();
-        
+
+        if (content.length < 200) {
+            console.log(`  ⚠ Warning: Content too short (${content.length} chars)`);
+        } else {
+            console.log(`  ✓ Extracted ${content.length} characters of content`);
+        }
+
         return content;
     } catch (error) {
         console.error(`Error scraping article ${url}:`, error.message);
@@ -286,27 +305,33 @@ async function main() {
         const savedArticles = [];
         for (const article of oldestArticles) {
             try {
+                console.log(`\n--- Processing Article ---`);
+                console.log(`Title: ${article.title}`);
+                console.log(`URL: ${article.url}`);
+
                 // Scrape full content
                 const content = await scrapeArticleContent(article.url);
-                
+
                 if (!content || content.length < 100) {
-                    console.log(`⚠ Skipping article (insufficient content): ${article.title}`);
+                    console.log(`⚠ Skipping article (insufficient content): ${article.title} (${content.length} chars)`);
                     continue;
                 }
-                
+
+                console.log(`Content preview: ${content.substring(0, 200)}...`);
+
                 // Save to API
                 const savedArticle = await postArticleToAPI({
                     title: article.title,
                     url: article.url,
                     content: content
                 });
-                
+
                 savedArticles.push(savedArticle);
-                
+
                 // Delay between requests to be respectful
                 await delay(1000);
             } catch (error) {
-                console.error(`Failed to process article: ${article.title}`);
+                console.error(`Failed to process article: ${article.title}`, error.message);
             }
         }
         
