@@ -14,9 +14,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return response()->json([
-        'message' => 'Article Automation API',
-        'version' => '1.0.0',
-        'status' => 'active'
+    return response()->json(['status' => 'ok'], 200);
+});
     ]);
 });
