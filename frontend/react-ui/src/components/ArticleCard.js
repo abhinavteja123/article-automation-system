@@ -4,8 +4,9 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/Card'
 import { Badge } from './ui/Badge';
 import { Button } from './ui/Button';
 import { Calendar, FileText, ArrowRight, GitCompare } from 'lucide-react';
+import { cn } from '../lib/utils';
 
-function ArticleCard({ article }) {
+function ArticleCard({ article, selected = false, onSelect = null }) {
   const isUpdated = article.version === 'updated';
 
   const getPreview = (content, maxLength = 120) => {
@@ -22,13 +23,36 @@ function ArticleCard({ article }) {
     });
   };
 
+  const handleCheckboxChange = (e) => {
+    e.stopPropagation();
+    console.log('Checkbox changed for article:', article.id);
+    if (onSelect) {
+      onSelect(article.id);
+    }
+  };
+
   return (
-    <Card className="group h-full flex flex-col transition-all hover:shadow-lg hover:-translate-y-1">
+    <Card className={cn(
+      "group h-full flex flex-col transition-all hover:shadow-lg hover:-translate-y-1",
+      selected && "ring-2 ring-primary bg-primary/5"
+    )}>
       <CardHeader className="space-y-4">
         <div className="flex items-center justify-between">
-          <Badge variant={isUpdated ? "success" : "secondary"}>
-            {isUpdated ? 'AI Enhanced' : 'Original'}
-          </Badge>
+          <div className="flex items-center gap-2">
+            {onSelect && (
+              <label className="flex items-center cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                <input
+                  type="checkbox"
+                  checked={selected}
+                  onChange={handleCheckboxChange}
+                  className="h-4 w-4 rounded border-gray-300 cursor-pointer"
+                />
+              </label>
+            )}
+            <Badge variant={isUpdated ? "success" : "secondary"}>
+              {isUpdated ? 'AI Enhanced' : 'Original'}
+            </Badge>
+          </div>
           <div className="flex items-center text-xs text-muted-foreground gap-1">
             <Calendar className="h-3 w-3" />
             {formatDate(article.created_at)}

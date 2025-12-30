@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Bot, Terminal, Loader2, Sparkles, AlertTriangle } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
@@ -10,8 +10,12 @@ function AutomationPage() {
   const [running, setRunning] = useState(false);
   const [logs, setLogs] = useState([]);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const bottomRef = useRef(null);
   const toast = useToast();
+
+  const selectedArticles = searchParams.get('selected')?.split(',').filter(Boolean) || [];
+  const isSelectiveMode = selectedArticles.length > 0;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -26,12 +30,19 @@ function AutomationPage() {
     setLogs([]);
 
     try {
-      addLog('🚀 Starting AI enhancement...');
+      if (isSelectiveMode) {
+        addLog(`🚀 Starting AI enhancement for ${selectedArticles.length} selected articles...`);
+      } else {
+        addLog('🚀 Starting AI enhancement for all articles...');
+      }
       addLog('📡 Connecting to automation server...');
 
       const response = await fetch('http://localhost:3001/run-automation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          articleIds: isSelectiveMode ? selectedArticles : undefined 
+        }),
       });
 
       if (!response.ok) throw new Error('Failed to connect to automation server');
@@ -95,7 +106,12 @@ function AutomationPage() {
         </div>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">AI Enhancement</h1>
-          <p className="text-muted-foreground">Optimize articles using Gemini AI.</p>
+          <p className="text-muted-foreground">
+            {isSelectiveMode 
+              ? `Optimize ${selectedArticles.length} selected article${selectedArticles.length > 1 ? 's' : ''} using Gemini AI.`
+              : 'Optimize all articles using Gemini AI.'
+            }
+          </p>
         </div>
       </div>
 

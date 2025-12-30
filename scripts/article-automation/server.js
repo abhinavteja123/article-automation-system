@@ -70,15 +70,27 @@ app.post('/run-scraper', (req, res) => {
 
 // Run automation endpoint
 app.post('/run-automation', (req, res) => {
-    console.log('Starting automation...');
+    const { articleIds } = req.body;
+    
+    if (articleIds && articleIds.length > 0) {
+        console.log(`Starting automation for specific articles: ${articleIds.join(', ')}`);
+    } else {
+        console.log('Starting automation for all articles...');
+    }
     
     // Set headers for streaming response
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
+    // Prepare command with article IDs if provided
+    const args = ['automation.js'];
+    if (articleIds && articleIds.length > 0) {
+        args.push('--articles', articleIds.join(','));
+    }
+
     // Spawn the automation script as a child process
-    const automation = spawn('node', ['automation.js'], {
+    const automation = spawn('node', args, {
         cwd: __dirname,
         shell: true
     });

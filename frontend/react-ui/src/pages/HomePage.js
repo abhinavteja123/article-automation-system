@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { articleService } from '../services/api';
 import ArticleCard from '../components/ArticleCard';
 import { Button } from '../components/ui/Button';
-import { Search, Plus, FileText, Bot, Layers } from 'lucide-react';
+import { Search, Plus, FileText, Bot, Layers, Trash2 } from 'lucide-react';
 import { Skeleton } from '../components/ui/Skeleton';
 import { StatsCard } from '../components/ui/StatsCard';
 import { cn } from '../lib/utils';
@@ -15,6 +15,8 @@ function HomePage() {
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedArticles, setSelectedArticles] = useState([]);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchArticles();
@@ -26,10 +28,60 @@ function HomePage() {
       setError(null);
       const response = await articleService.getAllArticles();
       setArticles(response.data || []);
+      setSelectedArticles([]);
     } catch (err) {
       setError(err.message || 'Failed to fetch articles');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (selectedArticles.length === filteredArticles.length) {
+      setSelectedArticles([]);
+    } else {
+      setSelectedArticles(filteredArticles.map(a => a.id));
+    }
+  };
+
+  const handleSelectArticle = (id) => {
+    console.log('Selecting article:', id);
+    setSelectedArticles(prev => {
+      const newSelection = prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id];
+      console.log('New selection:', newSelection);
+      return newSelection;
+    });
+  };
+
+  const handleDeleteSelected = async () => {
+    console.log('Delete selected called with:', selectedArticles);
+    if (!window.confirm(`Delete ${selectedArticles.length} selected article(s)?`)) return;
+    
+    setDeleting(true);
+    try {
+      await Promise.all(selectedArticles.map(id => articleService.deleteArticle(id)));
+      setSelectedArticles([]);
+      await fetchArticles();
+    } catch (err) {
+      console.error('Delete error:', err);
+      alert('Failed to delete articles: ' + err.message);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    if (!window.confirm(`Delete ALL ${articles.length} articles? This cannot be undone!`)) return;
+    if (!window.confirm('Are you absolutely sure? This will permanently delete all articles.')) return;
+    
+    setDeleting(true);
+    try {
+      await Promise.all(articles.map(a => articleService.deleteArticle(a.id)));
+      await fetchArticles();
+    } catch (err) {
+      alert('Failed to delete articles: ' + err.message);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -129,7 +181,34 @@ function HomePage() {
           <h1 className="text-3xl font-bold tracking-tight">Articles</h1>
           <p className="text-muted-foreground">Manage and track your content pipeline.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          {selectedArticles.length > 0 && (
+            <>
+              <Button 
+                variant="destructive" 
+                onClick={handleDeleteSelected}
+                disabled={deleting}
+                className="gap-2"
+              >
+                {deleting ? 'Deleting...' : `Delete ${selectedArticles.length}`}
+              </Button>
+              <Link to={`/automation?selected=${selectedArticles.join(',')}`}>
+                <Button variant="outline" className="gap-2">
+                  <Bot className="h-4 w-4" /> Enhance Selected
+                </Button>
+              </Link>
+            </>
+          )}
+          {articles.length > 0 && (
+            <Button 
+              variant="outline" 
+              onClick={handleDeleteAll}
+              disabled={deleting}
+              className="gap-2 border-destructive/50 text-destructive hover:bg-destructive/10"
+            >
+              <Trash2 className="h-4 w-4" /> Delete All
+            </Button>
+          )}
           <Link to="/scraper">
             <Button variant="outline" className="gap-2">
               <Plus className="h-4 w-4" /> Import Content
@@ -171,10 +250,29 @@ function HomePage() {
 
       {/* Filters and Search */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-4">
-        <div className="flex gap-6">
+        <div className="flex items-center gap-6">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={selectedArticles.length === filteredArticles.length && filteredArticles.length > 0}
+              onChange={handleSelectAll}
+              className="h-4 w-4 rounded border-gray-300 cursor-pointer"
+            />
+            <span className="text-sm font-medium">Select All</span>
+          </label>
           <FilterTab active={filter === 'all'} onClick={() => setFilter('all')}>All Articles</FilterTab>
           <FilterTab active={filter === 'original'} onClick={() => setFilter('original')}>Original</FilterTab>
           <FilterTab active={filter === 'updated'} onClick={() => setFilter('updated')}>Enhanced</FilterTab>
+          {selectedArticles.length > 0 && (
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              onClick={() => setSelectedArticles([])}
+              className="h-8"
+            >
+              Clear Selection
+            </Button>
+          )}
         </div>
 
         <div className="relative w-full md:w-72">
@@ -211,7 +309,11 @@ function HomePage() {
         >
           {filteredArticles.map((article) => (
             <motion.div key={article.id} variants={item}>
-              <ArticleCard article={article} />
+              <ArticleCard 
+                article={article} 
+                selected={selectedArticles.includes(article.id)}
+                onSelect={handleSelectArticle}
+              />
             </motion.div>
           ))}
         </motion.div>

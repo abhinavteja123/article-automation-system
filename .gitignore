@@ -34,9 +34,11 @@ yarn-error.log*
 /backend/laravel-api/.phpunit.result.cache
 /backend/laravel-api/Homestead.json
 /backend/laravel-api/Homestead.yaml
-/backend/laravel-api/storage/framework/cache/data/
+/backend/laravel-api/storage/framework/cache/
 /backend/laravel-api/storage/framework/sessions/
 /backend/laravel-api/storage/framework/views/
+/backend/laravel-api/storage/logs/
+/backend/laravel-api/bootstrap/cache/*.php
 
 # React
 /frontend/react-ui/node_modules/

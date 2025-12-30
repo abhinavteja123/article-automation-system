@@ -362,7 +362,7 @@ async function processArticle(article) {
 /**
  * Main automation function
  */
-async function main() {
+async function main(specificArticleIds = null) {
     try {
         console.log('\n' + '='.repeat(70));
         console.log('  ARTICLE AUTOMATION SERVICE - PHASE 2');
@@ -370,7 +370,14 @@ async function main() {
         console.log('='.repeat(70) + '\n');
         
         // Fetch all original articles
-        const originalArticles = await fetchOriginalArticles();
+        let originalArticles = await fetchOriginalArticles();
+        
+        // Filter by specific IDs if provided
+        if (specificArticleIds && specificArticleIds.length > 0) {
+            const ids = specificArticleIds.map(id => parseInt(id));
+            originalArticles = originalArticles.filter(article => ids.includes(article.id));
+            logger.info(`Filtering to ${originalArticles.length} specific articles: ${ids.join(', ')}`);
+        }
         
         if (originalArticles.length === 0) {
             logger.warn('No original articles found. Please run the scraper first.');
@@ -418,5 +425,16 @@ async function main() {
     }
 }
 
-// Run the automation
-main();
+// Run the automation if called directly
+if (import.meta.url === `file://${process.argv[1]}` || import.meta.url.includes('automation.js')) {
+    // Parse command-line arguments for article IDs
+    const args = process.argv.slice(2);
+    let articleIds = null;
+    
+    const articlesIndex = args.indexOf('--articles');
+    if (articlesIndex !== -1 && args[articlesIndex + 1]) {
+        articleIds = args[articlesIndex + 1].split(',').filter(Boolean);
+    }
+    
+    main(articleIds);
+}
