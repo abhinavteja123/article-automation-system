@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { articleService } from '../services/api';
 import ArticleCard from '../components/ArticleCard';
-import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { Search, Plus, FileText, Bot, Layers } from 'lucide-react';
 import { Skeleton } from '../components/ui/Skeleton';
