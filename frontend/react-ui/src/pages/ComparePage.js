@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { articleService } from '../services/api';
 import { ArrowLeft, Split, Minimize, AlertCircle, FileText, Zap, TrendingUp, ExternalLink, Loader2 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Card, CardContent } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { StatsCard } from '../components/ui/StatsCard';
 import { cn } from '../lib/utils';
@@ -19,11 +19,7 @@ function ComparePage() {
   const [error, setError] = useState(null);
   const [viewMode, setViewMode] = useState('side-by-side');
 
-  useEffect(() => {
-    fetchComparison();
-  }, [id]);
-
-  const fetchComparison = async () => {
+  const fetchComparison = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -34,7 +30,11 @@ function ComparePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    fetchComparison();
+  }, [fetchComparison]);
 
   const getWordCount = (text) => text ? text.split(/\s+/).filter(w => w.length > 0).length : 0;
 

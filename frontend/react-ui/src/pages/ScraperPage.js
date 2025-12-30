@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Database, Terminal, CheckCircle, AlertTriangle, Play, Loader2 } from 'lucide-react';
+import { ArrowLeft, Database, Terminal, AlertTriangle, Play, Loader2 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
@@ -9,7 +9,6 @@ import { useToast } from '../components/ui/Toast';
 function ScraperPage() {
   const [running, setRunning] = useState(false);
   const [logs, setLogs] = useState([]);
-  const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
   const bottomRef = useRef(null);
   const toast = useToast();
@@ -25,7 +24,6 @@ function ScraperPage() {
   const runScraper = async () => {
     setRunning(true);
     setLogs([]);
-    setSuccess(false);
 
     try {
       addLog('🚀 Starting article scraper...');
@@ -65,7 +63,6 @@ function ScraperPage() {
                 addLog('');
                 if (data.success) {
                   addLog('🎉 ' + data.message);
-                  setSuccess(true);
                   toast.success("Articles scraped successfully!");
                   setTimeout(() => navigate('/articles'), 3000);
                 } else {

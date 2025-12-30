@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
-import { ArrowRight, Zap, Database, BarChart3, Bot } from 'lucide-react';
+import { ArrowRight, Zap, Database, Bot } from 'lucide-react';
 
 const LandingPage = () => {
   const container = {

@@ -5,7 +5,7 @@ import { articleService } from '../services/api';
 import ArticleCard from '../components/ArticleCard';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
-import { Search, Plus, Loader2, FileText, Bot, Layers } from 'lucide-react';
+import { Search, Plus, FileText, Bot, Layers } from 'lucide-react';
 import { Skeleton } from '../components/ui/Skeleton';
 import { StatsCard } from '../components/ui/StatsCard';
 import { cn } from '../lib/utils';
