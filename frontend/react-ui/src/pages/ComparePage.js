@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { articleService } from '../services/api';
-import { ArrowLeft, Split, Minimize, AlertCircle, FileText, Zap, TrendingUp, ExternalLink, Loader2 } from 'lucide-react';
+import { Split, Minimize, AlertCircle, FileText, Zap, TrendingUp, ExternalLink, Loader2 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';

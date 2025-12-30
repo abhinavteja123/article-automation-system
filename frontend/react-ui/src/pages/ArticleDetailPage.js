@@ -1,28 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import { articleService } from '../services/api';
-import { Loader2, ArrowLeft, Calendar, ExternalLink, BookOpen, AlertCircle, Download } from 'lucide-react';
+import { Calendar, ExternalLink, BookOpen, AlertCircle, Download } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
-import { Card, CardContent, CardHeader } from '../components/ui/Card';
+import { Card, CardContent } from '../components/ui/Card';
 import { Skeleton } from '../components/ui/Skeleton';
 import { Breadcrumbs } from '../components/ui/Breadcrumbs';
 import { useReadingProgress } from '../hooks/useReadingProgress';
 
 function ArticleDetailPage() {
   const { id } = useParams();
-  const navigate = useNavigate();
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const readingProgress = useReadingProgress();
 
-  useEffect(() => {
-    fetchArticle();
-  }, [id]);
-
-  const fetchArticle = async () => {
+  const fetchArticle = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -33,7 +28,11 @@ function ArticleDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    fetchArticle();
+  }, [fetchArticle]);
 
   const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };

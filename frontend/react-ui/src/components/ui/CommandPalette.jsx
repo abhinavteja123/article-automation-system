@@ -7,8 +7,7 @@ import {
     Search,
     Bot,
     Sun,
-    Moon,
-    Laptop
+    Moon
 } from "lucide-react";
 
 export function CommandPalette() {
