@@ -43,7 +43,7 @@ async function fetchWithRetry(url, options = {}, retries = MAX_RETRIES) {
         try {
             const response = await axios.get(url, {
                 ...options,
-                timeout: 30000,
+                timeout: 15000, // Reduced from 30000 (30s) to 15000 (15s) for faster scraping
                 headers: {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                     ...options.headers
@@ -198,28 +198,32 @@ async function scrapeCompetitorArticle(url) {
 }
 
 /**
- * Call OpenAI API to rewrite article
+ * Call Gemini API to rewrite article with proper quota handling
  */
 async function rewriteArticleWithAI(originalArticle, competitorContents) {
-    try {
-        logger.info(`Rewriting article: "${originalArticle.title}"`);
-        
-        const prompt = `You are an expert content writer and SEO specialist. 
+    const maxRetries = 5; // Increased retries for quota issues
+    let lastError = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            logger.info(`Rewriting article: "${originalArticle.title}" (attempt ${attempt}/${maxRetries})`);
+
+            const prompt = `You are an expert content writer and SEO specialist.
 
 I have an original article and content from two top-ranking competitor articles on the same topic.
 
 ORIGINAL ARTICLE:
 Title: ${originalArticle.title}
-Content: ${originalArticle.content.substring(0, 3000)}
+Content: ${originalArticle.content.substring(0, 2500)}
 
 COMPETITOR ARTICLE 1:
-${competitorContents[0] ? competitorContents[0].substring(0, 2000) : 'Not available'}
+${competitorContents[0] ? competitorContents[0].substring(0, 1500) : 'Not available'}
 
 COMPETITOR ARTICLE 2:
-${competitorContents[1] ? competitorContents[1].substring(0, 2000) : 'Not available'}
+${competitorContents[1] ? competitorContents[1].substring(0, 1500) : 'Not available'}
 
 TASK:
-Rewrite the original article to make it competitive with top-ranking articles. 
+Rewrite the original article to make it competitive with top-ranking articles.
 
 REQUIREMENTS:
 1. Improve formatting with clear headings (use ## for H2, ### for H3)
@@ -234,39 +238,103 @@ REQUIREMENTS:
 
 Return ONLY the rewritten article content in markdown format. Do not include the title or references section.`;
 
-        const response = await axios.post(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-            {
-                contents: [{
-                    parts: [{
-                        text: prompt
-                    }]
-                }],
-                generationConfig: {
-                    temperature: 0.7,
-                    maxOutputTokens: 4000,
-                }
-            },
-            {
-                headers: {
-                    'Content-Type': 'application/json'
+            const response = await axios.post(
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+                {
+                    contents: [{
+                        parts: [{
+                            text: prompt
+                        }]
+                    }],
+                    generationConfig: {
+                        temperature: 0.7,
+                        maxOutputTokens: 3000, // Reduced from 4000 for faster responses
+                    }
                 },
-                timeout: 120000
+                {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    timeout: 60000 // Reduced from 120000 (2 minutes) to 60000 (1 minute)
+                }
+            );
+
+            const rewrittenContent = response.data.candidates[0].content.parts[0].text.trim();
+            logger.success(`Article rewritten successfully (${rewrittenContent.length} characters)`);
+
+            return rewrittenContent;
+
+        } catch (error) {
+            lastError = error;
+
+            if (error.response && error.response.status === 429) {
+                // Handle quota exceeded - extract retry delay from response
+                const errorData = error.response.data;
+                let retryDelay = 60000; // Default 1 minute
+
+                // Try to extract retry delay from the RetryInfo details
+                if (errorData.error && errorData.error.details) {
+                    const retryInfo = errorData.error.details.find(detail =>
+                        detail['@type'] === 'type.googleapis.com/google.rpc.RetryInfo'
+                    );
+                    if (retryInfo && retryInfo.retryDelay) {
+                        // Handle both string format ("16.120199827s") and object format
+                        if (typeof retryInfo.retryDelay === 'string') {
+                            // Extract seconds from string like "16.120199827s"
+                            const match = retryInfo.retryDelay.match(/(\d+(?:\.\d+)?)s/);
+                            if (match) {
+                                retryDelay = parseFloat(match[1]) * 1000;
+                            }
+                        } else if (retryInfo.retryDelay.seconds !== undefined) {
+                            // Handle object format
+                            const seconds = parseFloat(retryInfo.retryDelay.seconds || 0);
+                            const nanos = parseFloat(retryInfo.retryDelay.nanos || 0) / 1000000000;
+                            retryDelay = (seconds + nanos) * 1000;
+                        }
+                    }
+                }
+
+                // Also try to extract from error message as fallback
+                if (retryDelay === 60000 && errorData.error && errorData.error.message) {
+                    const match = errorData.error.message.match(/retry in (\d+(?:\.\d+)?)s/);
+                    if (match) {
+                        retryDelay = parseFloat(match[1]) * 1000;
+                    }
+                }
+
+                // Ensure minimum delay of 5 seconds and maximum of 5 minutes
+                retryDelay = Math.max(5000, Math.min(retryDelay, 300000));
+
+                if (attempt < maxRetries) {
+                    logger.warn(`Gemini API quota exceeded. Waiting ${Math.ceil(retryDelay/1000)}s before retry ${attempt + 1}/${maxRetries}...`);
+                    await delay(retryDelay);
+                    continue;
+                } else {
+                    logger.error(`Gemini API quota exceeded after ${maxRetries} attempts. Giving up.`);
+                    break;
+                }
+            } else {
+                // For other errors, use exponential backoff
+                if (attempt < maxRetries) {
+                    const backoffDelay = Math.min(1000 * Math.pow(2, attempt - 1), 30000); // Max 30 seconds
+                    logger.warn(`Gemini API error (attempt ${attempt}/${maxRetries}). Retrying in ${backoffDelay/1000}s...`);
+                    await delay(backoffDelay);
+                    continue;
+                } else {
+                    logger.error(`Failed to rewrite article after ${maxRetries} attempts: ${error.message}`);
+                    break;
+                }
             }
-        );
-        
-        const rewrittenContent = response.data.candidates[0].content.parts[0].text.trim();
-        logger.success(`Article rewritten successfully (${rewrittenContent.length} characters)`);
-        
-        return rewrittenContent;
-    } catch (error) {
-        if (error.response) {
-            logger.error(`Gemini API Error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
-        } else {
-            logger.error(`Failed to rewrite article: ${error.message}`);
         }
-        throw error;
     }
+
+    // If we get here, all retries failed
+    if (lastError.response) {
+        logger.error(`Gemini API Error: ${lastError.response.status} - ${JSON.stringify(lastError.response.data)}`);
+    } else {
+        logger.error(`Failed to rewrite article: ${lastError.message}`);
+    }
+    throw lastError;
 }
 
 /**
@@ -325,15 +393,26 @@ async function processArticle(article) {
             // Continue anyway with empty competitor list
         }
         
-        // Step 2: Scrape competitor articles
+        // Step 2: Scrape competitor articles (in parallel for speed)
         const competitorContents = [];
-        for (const competitor of competitorArticles) {
-            const content = await scrapeCompetitorArticle(competitor.url);
-            if (content && content.length > 100) { // Only use if we got meaningful content
+        const scrapePromises = competitorArticles.map(async (competitor) => {
+            try {
+                const content = await scrapeCompetitorArticle(competitor.url);
+                if (content && content.length > 100) { // Only use if we got meaningful content
+                    return content;
+                }
+            } catch (error) {
+                logger.warn(`Failed to scrape ${competitor.url}: ${error.message}`);
+            }
+            return null;
+        });
+
+        const scrapeResults = await Promise.all(scrapePromises);
+        scrapeResults.forEach(content => {
+            if (content) {
                 competitorContents.push(content);
             }
-            await delay(2000); // Respectful delay
-        }
+        });
         
         if (competitorContents.length === 0 && competitorArticles.length > 0) {
             logger.warn('Failed to scrape competitor content, will enhance without competitor analysis...');
@@ -401,8 +480,8 @@ async function main(specificArticleIds = null) {
                     results.failed++;
                 }
                 
-                // Delay between articles to avoid rate limits
-                await delay(3000);
+                // Delay between articles to avoid rate limits (reduced to 2 seconds for speed)
+                await delay(2000);
                 
             } catch (error) {
                 logger.error(`Error processing article: ${error.message}`);
