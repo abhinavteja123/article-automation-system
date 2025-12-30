@@ -47,7 +47,7 @@ BeyondChats Blog
 ## Tech Stack
 
 **Backend:**
-- Laravel 9 (PHP 8.0+)
+- Laravel 9 (PHP 8.2+)
 - MySQL 8.0
 - REST API
 
